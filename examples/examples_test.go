@@ -3,6 +3,7 @@ package examples
 import (
 	"strings"
 	"testing"
+	"testing/fstest"
 )
 
 func mustLoad(t *testing.T) []Example {
@@ -127,6 +128,57 @@ func TestFragmentAndFind(t *testing.T) {
 	}
 	if _, ok := Find(exs, "nope"); ok {
 		t.Error("Find returned ok for unknown slug")
+	}
+}
+
+func fakeFS(withHx bool) fstest.MapFS {
+	m := fstest.MapFS{
+		"a/alpine.html": {Data: []byte("<div x-data></div>\n")},
+		"a/notes.md":    {Data: []byte("note\n")},
+	}
+	if withHx {
+		m["a/hxlive.html"] = &fstest.MapFile{Data: []byte("<div></div>\n")}
+	}
+	return m
+}
+
+func TestLoadRejectsStatusFileMismatch(t *testing.T) {
+	if _, err := load(fakeFS(true), []row{{"a", "A", Directive, []string{"x-a"}, None}}); err == nil {
+		t.Error("none row with hxlive.html: want error")
+	}
+	if _, err := load(fakeFS(false), []row{{"a", "A", Directive, []string{"x-a"}, Equivalent}}); err == nil {
+		t.Error("demo row without hxlive.html: want error")
+	}
+	if _, err := load(fakeFS(false), []row{{"a", "A", Directive, []string{"x-a"}, None}}); err != nil {
+		t.Errorf("valid none row: %v", err)
+	}
+}
+
+func TestLoadRejectsDuplicateFeatures(t *testing.T) {
+	fsys := fakeFS(true)
+	fsys["b/alpine.html"] = &fstest.MapFile{Data: []byte("<div x-data></div>\n")}
+	fsys["b/hxlive.html"] = &fstest.MapFile{Data: []byte("<div></div>\n")}
+	fsys["b/notes.md"] = &fstest.MapFile{Data: []byte("note\n")}
+	rows := []row{
+		{"a", "A", Directive, []string{"x-a"}, Equivalent},
+		{"b", "B", Directive, []string{"x-a"}, Equivalent},
+	}
+	if _, err := load(fsys, rows); err == nil {
+		t.Error("duplicate feature: want error")
+	}
+}
+
+func TestFeaturesRejectsDisagreement(t *testing.T) {
+	exs := []Example{{Slug: "a", Title: "A", Group: Directive, Features: []string{"x-a"}, Status: Equivalent}}
+	if _, err := features(exs, []string{"x-a", "x-b"}); err == nil {
+		t.Error("order lists unclaimed feature: want error")
+	}
+	if _, err := features(exs, []string{}); err == nil {
+		t.Error("card claims feature missing from order: want error")
+	}
+	rows, err := features(exs, []string{"x-a"})
+	if err != nil || len(rows) != 1 || rows[0].Slug != "a" {
+		t.Errorf("valid: rows=%v err=%v", rows, err)
 	}
 }
 

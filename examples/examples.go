@@ -141,26 +141,30 @@ var featureOrder = []string{
 // stray hxlive.html on a None row, or a feature claimed by two cards is an
 // error so the server refuses to start rather than serve a wrong page.
 func Load() ([]Example, error) {
+	return load(files, order)
+}
+
+func load(fsys fs.FS, rows []row) ([]Example, error) {
 	md := goldmark.New()
-	exs := make([]Example, 0, len(order))
+	exs := make([]Example, 0, len(rows))
 	claimed := map[string]string{}
-	for _, o := range order {
-		alpine, err := read(o.slug, "alpine.html")
+	for _, o := range rows {
+		alpine, err := read(fsys, o.slug, "alpine.html")
 		if err != nil {
 			return nil, err
 		}
 		var hxlive string
 		if o.status == None {
-			if _, err := fs.Stat(files, o.slug+"/hxlive.html"); err == nil {
+			if _, err := fs.Stat(fsys, o.slug+"/hxlive.html"); err == nil {
 				return nil, fmt.Errorf("examples: %s has status none but an hxlive.html", o.slug)
 			}
 		} else {
-			hxlive, err = read(o.slug, "hxlive.html")
+			hxlive, err = read(fsys, o.slug, "hxlive.html")
 			if err != nil {
 				return nil, err
 			}
 		}
-		notes, err := read(o.slug, "notes.md")
+		notes, err := read(fsys, o.slug, "notes.md")
 		if err != nil {
 			return nil, err
 		}
@@ -192,14 +196,18 @@ func Load() ([]Example, error) {
 // featureOrder and the cards disagree, so the matrix can never silently omit
 // or invent a feature.
 func Features(exs []Example) ([]FeatureRow, error) {
+	return features(exs, featureOrder)
+}
+
+func features(exs []Example, names []string) ([]FeatureRow, error) {
 	byFeature := map[string]Example{}
 	for _, ex := range exs {
 		for _, f := range ex.Features {
 			byFeature[f] = ex
 		}
 	}
-	rows := make([]FeatureRow, 0, len(featureOrder))
-	for _, f := range featureOrder {
+	rows := make([]FeatureRow, 0, len(names))
+	for _, f := range names {
 		ex, ok := byFeature[f]
 		if !ok {
 			return nil, fmt.Errorf("examples: featureOrder lists %q but no card claims it", f)
@@ -238,8 +246,8 @@ func Find(exs []Example, slug string) (Example, bool) {
 	return Example{}, false
 }
 
-func read(slug, name string) (string, error) {
-	b, err := fs.ReadFile(files, slug+"/"+name)
+func read(fsys fs.FS, slug, name string) (string, error) {
+	b, err := fs.ReadFile(fsys, slug+"/"+name)
 	if err != nil {
 		return "", fmt.Errorf("examples: %w", err)
 	}
