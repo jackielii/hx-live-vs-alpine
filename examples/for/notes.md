@@ -1,0 +1,1 @@
+The docs example with a button that appends an item. There is no loop primitive in hx-live: the list is HTML, not an array, so it is rendered by the server or written by hand. Adding to it is `insert()`, or an htmx request when the server owns the list. This is the largest model difference between the two libraries.

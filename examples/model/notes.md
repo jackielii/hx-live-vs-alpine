@@ -1,0 +1,1 @@
+`x-model` keeps an input and a property in sync both ways. hx-live has no two-way binding because the input already is the state: read it with `q('previous input').value`, and when a handler must write it, assign to `.value`. hx-live re-evaluates on `input` events after a short debounce (`config.live.inputDebounce`, 100 ms by default), so the span lags a keystroke by that much.

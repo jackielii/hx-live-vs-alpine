@@ -100,7 +100,11 @@ func TestIndexListsEveryExampleWithBothSources(t *testing.T) {
 		if !strings.Contains(body, `id="`+ex.Slug+`"`) {
 			t.Errorf("%s: no anchor", ex.Slug)
 		}
-		for _, lib := range []examples.Lib{examples.Alpine, examples.HxLive} {
+		libs := []examples.Lib{examples.Alpine}
+		if ex.HasDemo() {
+			libs = append(libs, examples.HxLive)
+		}
+		for _, lib := range libs {
 			src := "/frame/" + string(lib) + "/" + ex.Slug
 			if !strings.Contains(body, `src="`+src+`"`) {
 				t.Errorf("%s: no iframe for %s", ex.Slug, lib)
@@ -110,7 +114,7 @@ func TestIndexListsEveryExampleWithBothSources(t *testing.T) {
 				t.Errorf("%s: escaped %s fragment not shown", ex.Slug, lib)
 			}
 		}
-		if strings.Contains(body, ex.HxLive) {
+		if ex.HxLive != "" && strings.Contains(body, ex.HxLive) {
 			t.Errorf("%s: raw hxlive fragment leaked unescaped into the index", ex.Slug)
 		}
 	}

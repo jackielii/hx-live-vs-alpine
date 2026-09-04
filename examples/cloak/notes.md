@@ -1,0 +1,1 @@
+Alpine removes `x-cloak` when it initialises an element, so a `[x-cloak] { display: none }` rule hides markup until then. hx-live has no cloak directive, but a binding can remove any attribute: `:hx-cloak="false"` drops the marker in the same evaluation pass that applies `:hidden`, so the same CSS trick works.

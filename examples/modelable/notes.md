@@ -1,0 +1,1 @@
+`x-modelable` exposes a child component's property so a parent can `x-model` it. It only makes sense where components own private state. hx-live has no components and no private state: both elements would read and write the same `data-*` attribute on their common ancestor, and there would be nothing to expose.

@@ -132,17 +132,25 @@ var order = []row{
 	{"effect", "Effects", Directive, []string{"x-effect"}, Equivalent},
 	{"ignore", "Ignoring a subtree", Directive, []string{"x-ignore"}, Equivalent},
 	{"ref", "References", Directive, []string{"x-ref", "$refs"}, Equivalent},
+	{"model", "Two-way binding", Directive, []string{"x-model"}, Workaround},
+	{"for", "Loops", Directive, []string{"x-for"}, Workaround},
 	{"search", "Search filtering a list", Directive, []string{"x-model (filtering)", "x-for (filtering)"}, Workaround},
+	{"if", "Conditional rendering", Directive, []string{"x-if"}, Workaround},
 	{"tabs", "Tabs", Directive, []string{"x-bind (class, tabs)"}, Equivalent},
 	{"transition", "Transition", Directive, []string{"x-transition"}, Workaround},
+	{"cloak", "Cloaking", Directive, []string{"x-cloak"}, Workaround},
+	{"teleport", "Teleport", Directive, []string{"x-teleport"}, None},
+	{"modelable", "Modelable", Directive, []string{"x-modelable"}, None},
+	{"id", "Unique ids", Directive, []string{"x-id", "$id"}, None},
 }
 
 // featureOrder is the matrix order: Alpine docs order within each group.
 var featureOrder = []string{
-	"x-bind", "x-bind (class object)", "x-bind (class, tabs)", "x-data", "x-effect",
-	"x-for (filtering)", "x-html", "x-ignore", "x-init", "x-model (filtering)",
-	"x-on (modifiers)", "x-on (.outside)", "x-ref", "x-show", "x-text", "x-transition",
-	"$data", "$refs",
+	"x-bind", "x-bind (class object)", "x-bind (class, tabs)", "x-cloak", "x-data", "x-effect",
+	"x-for", "x-for (filtering)", "x-html", "x-id", "x-if", "x-ignore", "x-init",
+	"x-model", "x-model (filtering)", "x-modelable", "x-on (modifiers)", "x-on (.outside)",
+	"x-ref", "x-show", "x-teleport", "x-text", "x-transition",
+	"$data", "$id", "$refs",
 }
 
 // Load reads every card from the embedded files. A missing or empty file, a

@@ -1,0 +1,1 @@
+`x-teleport` moves a subtree elsewhere in the document at runtime, usually to escape an ancestor's `overflow` or stacking context. hx-live has nothing like it. The modern answer is to not need it: `<dialog>` and the Popover API render in the top layer regardless of where the element sits, and anything else can be placed where it belongs by the server.
