@@ -1,0 +1,1 @@
+The docs example plus a sibling outside the ignored subtree so the difference is visible. `x-ignore` and htmx's `hx-ignore` both leave the subtree alone: the inner span keeps its original text while the outer one is bound.

@@ -125,6 +125,13 @@ var order = []row{
 	{"counter", "Counter", Directive, []string{"x-data", "x-text", "$data"}, Equivalent},
 	{"dropdown", "Dropdown with click-outside", Directive, []string{"x-show", "x-on (.outside)"}, Equivalent},
 	{"classbind", "Class binding", Directive, []string{"x-bind (class object)"}, Equivalent},
+	{"bind", "Attribute binding", Directive, []string{"x-bind"}, Equivalent},
+	{"on", "Event modifiers", Directive, []string{"x-on (modifiers)"}, Equivalent},
+	{"init", "Initialisation", Directive, []string{"x-init"}, Equivalent},
+	{"html", "HTML binding", Directive, []string{"x-html"}, Equivalent},
+	{"effect", "Effects", Directive, []string{"x-effect"}, Equivalent},
+	{"ignore", "Ignoring a subtree", Directive, []string{"x-ignore"}, Equivalent},
+	{"ref", "References", Directive, []string{"x-ref", "$refs"}, Equivalent},
 	{"search", "Search filtering a list", Directive, []string{"x-model (filtering)", "x-for (filtering)"}, Workaround},
 	{"tabs", "Tabs", Directive, []string{"x-bind (class, tabs)"}, Equivalent},
 	{"transition", "Transition", Directive, []string{"x-transition"}, Workaround},
@@ -132,9 +139,10 @@ var order = []row{
 
 // featureOrder is the matrix order: Alpine docs order within each group.
 var featureOrder = []string{
-	"x-bind (class object)", "x-bind (class, tabs)", "x-data", "x-for (filtering)",
-	"x-model (filtering)", "x-on (.outside)", "x-show", "x-text", "x-transition",
-	"$data",
+	"x-bind", "x-bind (class object)", "x-bind (class, tabs)", "x-data", "x-effect",
+	"x-for (filtering)", "x-html", "x-ignore", "x-init", "x-model (filtering)",
+	"x-on (modifiers)", "x-on (.outside)", "x-ref", "x-show", "x-text", "x-transition",
+	"$data", "$refs",
 }
 
 // Load reads every card from the embedded files. A missing or empty file, a

@@ -1,0 +1,1 @@
+Adapted from the docs' `@keyup.enter` example. Alpine's dotted modifiers (`.enter`, `.prevent`, `.debounce`) become `hx-on`'s event grammar: a bracket filter such as `keyup[key=='Enter']`, modifiers such as `debounce:200ms`, and plain `event.preventDefault()` where Alpine would write `.prevent`.

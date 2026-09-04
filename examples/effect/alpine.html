@@ -1,0 +1,4 @@
+<div x-data="{ label: 'Hello', length: 0 }" x-effect="length = label.length">
+    <button @click="label += ' World!'">Change Message</button>
+    <span x-text="length"></span>
+</div>

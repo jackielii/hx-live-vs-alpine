@@ -1,0 +1,1 @@
+Adapted from the docs, which log to the console. `x-effect` tracks the reactive properties it reads and re-runs when one changes. An `hx-live` expression re-runs after any DOM mutation instead, so it needs no dependency tracking; the result is the same and the expression must simply be cheap and idempotent.

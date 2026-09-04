@@ -1,0 +1,4 @@
+<div data-label="Hello" data-length="0" hx-live="data.length = data.label.length">
+    <button hx-on:click="data.label += ' World!'">Change Message</button>
+    <span :text="data.length"></span>
+</div>

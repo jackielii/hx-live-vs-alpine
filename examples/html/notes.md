@@ -1,0 +1,1 @@
+`x-html` and `:html` both set `innerHTML`, with the same warning: never feed either untrusted markup. The hx-live value is a plain string in a `data-*` attribute; a value that is not valid JSON is returned as-is.
