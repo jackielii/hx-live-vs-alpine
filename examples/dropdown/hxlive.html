@@ -1,6 +1,6 @@
 <div>
     <button aria-expanded="false" hx-on:click="toggle('aria-expanded')">Toggle</button>
 
-    <div :hidden="!q('previous button').attr('aria-expanded')"
-         hx-on="click from:outside -> q('previous button').attr('aria-expanded', false)">Contents...</div>
+    <div :hidden="!q('previous button').attr['aria-expanded']"
+         hx-on="click from:outside -> !q('previous button').contains(event.target) && (q('previous button').attr['aria-expanded'] = false)">Contents...</div>
 </div>

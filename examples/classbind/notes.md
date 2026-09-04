@@ -1,1 +1,3 @@
-Same object-form `:class` in both. Alpine's condition is a property; hx-live's is the element's own `aria-pressed`, toggled by `toggle('aria-pressed')`, which flips the string between `"true"` and `"false"` while `attr()` reads it back as a boolean.
+Same object-form `:class` in both. Alpine's condition is a property; hx-live's is the element's own `aria-pressed`, toggled by `toggle('aria-pressed')`, which flips the string between `"true"` and `"false"` while `attr['aria-pressed']` reads it back as a boolean.
+
+The installed htmx 4.0.0 (`node_modules/htmx.org/dist/ext/hx-live.js`) exposes `attr` as a property-access proxy rather than the callable shown in the hx-live docs checkout — `attrHandler.get` returns `readAttr(...)` directly, so `attr('aria-pressed')` throws `TypeError: attr is not a function`. Bracket property access, `attr['aria-pressed']`, is the correct form against this build.
