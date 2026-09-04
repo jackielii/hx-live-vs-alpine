@@ -1,1 +1,1 @@
-The docs example plus a sibling outside the ignored subtree so the difference is visible. `x-ignore` and htmx's `hx-ignore` both leave the subtree alone: the inner span keeps its original text while the outer one is bound.
+The docs example, adapted: a sibling span outside the ignored subtree makes the difference visible, the label reads "processed", and the ignored span carries the text "untouched" so there is something to leave alone. `x-ignore` and htmx's `hx-ignore` both leave the subtree alone: the inner span keeps its original text while the outer one is bound.

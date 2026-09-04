@@ -140,15 +140,38 @@ func TestIndexRendersTheMatrix(t *testing.T) {
 	if end := strings.Index(matrix, "</table>"); end > 0 {
 		matrix = matrix[:end]
 	}
+	// sections[0] is the thead; sections 1..3 are the group tbody sections, in
+	// the order examples.Groups lists them (Directives, Magics, Globals).
+	sections := strings.Split(matrix, "<tbody>")
+	if len(sections) != len(examples.Groups)+1 {
+		t.Fatalf("matrix has %d <tbody> sections, want %d", len(sections)-1, len(examples.Groups))
+	}
+	sectionFor := func(g examples.Group) string {
+		for i, group := range examples.Groups {
+			if group == g {
+				return sections[i+1]
+			}
+		}
+		return ""
+	}
 	for _, f := range feats {
-		if !strings.Contains(matrix, html.EscapeString(f.Feature)) {
-			t.Errorf("matrix lacks feature %q", f.Feature)
+		section := sectionFor(f.Group)
+		if !strings.Contains(section, html.EscapeString(f.Feature)) {
+			t.Errorf("%s: feature %q not found in its %q section", f.Slug, f.Feature, f.Group)
 		}
-		if !strings.Contains(matrix, `href="#`+f.Slug+`"`) {
-			t.Errorf("matrix lacks link to %s", f.Slug)
+		if !strings.Contains(section, `href="#`+f.Slug+`"`) {
+			t.Errorf("%s: link to %s not found in its %q section", f.Feature, f.Slug, f.Group)
 		}
-		if !strings.Contains(matrix, string(f.Status)) {
-			t.Errorf("matrix lacks status %q", f.Status)
+		if !strings.Contains(section, string(f.Status)) {
+			t.Errorf("%s: status %q not found in its %q section", f.Feature, f.Status, f.Group)
+		}
+		for i, g := range examples.Groups {
+			if g == f.Group {
+				continue
+			}
+			if strings.Contains(sections[i+1], html.EscapeString(f.Feature)) {
+				t.Errorf("%s: feature belongs to %q but also appears in the %q section", f.Feature, f.Group, g)
+			}
 		}
 	}
 	for _, g := range examples.Groups {

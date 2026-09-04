@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"strings"
 
 	"github.com/yuin/goldmark"
 )
@@ -224,6 +225,20 @@ func Features(exs []Example) ([]FeatureRow, error) {
 	return features(exs, featureOrder)
 }
 
+// groupOf derives the matrix group a feature name belongs to from its
+// spelling: a `$` prefix is a magic property, an `Alpine.` prefix is a
+// global, and everything else is a directive.
+func groupOf(feature string) Group {
+	switch {
+	case strings.HasPrefix(feature, "$"):
+		return Magic
+	case strings.HasPrefix(feature, "Alpine."):
+		return Global
+	default:
+		return Directive
+	}
+}
+
 func features(exs []Example, names []string) ([]FeatureRow, error) {
 	byFeature := map[string]Example{}
 	for _, ex := range exs {
@@ -237,7 +252,7 @@ func features(exs []Example, names []string) ([]FeatureRow, error) {
 		if !ok {
 			return nil, fmt.Errorf("examples: featureOrder lists %q but no card claims it", f)
 		}
-		rows = append(rows, FeatureRow{Feature: f, Slug: ex.Slug, Title: ex.Title, Group: ex.Group, Status: ex.Status})
+		rows = append(rows, FeatureRow{Feature: f, Slug: ex.Slug, Title: ex.Title, Group: groupOf(f), Status: ex.Status})
 		delete(byFeature, f)
 	}
 	if len(byFeature) > 0 {

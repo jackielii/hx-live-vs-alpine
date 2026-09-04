@@ -89,7 +89,7 @@ func TestFeaturesCoversEveryCardFeatureOnce(t *testing.T) {
 	for _, f := range feats {
 		fromMatrix[f.Feature]++
 		ex, ok := Find(exs, f.Slug)
-		if !ok || ex.Title != f.Title || ex.Group != f.Group || ex.Status != f.Status {
+		if !ok || ex.Title != f.Title || ex.Status != f.Status {
 			t.Errorf("matrix line %q does not match card %q", f.Feature, f.Slug)
 		}
 	}
@@ -100,6 +100,39 @@ func TestFeaturesCoversEveryCardFeatureOnce(t *testing.T) {
 	}
 	if len(fromMatrix) != len(fromCards) {
 		t.Errorf("matrix has %d features, cards have %d", len(fromMatrix), len(fromCards))
+	}
+}
+
+func TestFeatureGroupComesFromTheName(t *testing.T) {
+	exs := mustLoad(t)
+	feats, err := Features(exs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	counts := map[Group]int{}
+	for _, f := range feats {
+		want := Directive
+		switch {
+		case strings.HasPrefix(f.Feature, "$"):
+			want = Magic
+		case strings.HasPrefix(f.Feature, "Alpine."):
+			want = Global
+		}
+		if f.Group != want {
+			t.Errorf("%q: group %q, want %q", f.Feature, f.Group, want)
+		}
+		counts[f.Group]++
+	}
+	if counts[Directive] != 23 || counts[Magic] != 9 || counts[Global] != 3 {
+		t.Errorf("group counts %v, want 23/9/3", counts)
+	}
+}
+
+func TestEveryAlpineFragmentHasARoot(t *testing.T) {
+	for _, ex := range mustLoad(t) {
+		if !strings.Contains(ex.Alpine, "x-data") && !strings.Contains(ex.Alpine, "x-init") {
+			t.Errorf("%s: alpine fragment has no x-data or x-init root, Alpine will ignore it", ex.Slug)
+		}
 	}
 }
 

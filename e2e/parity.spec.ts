@@ -109,7 +109,7 @@ for (const lib of libs) {
       const errors = collectErrors(page);
       await page.goto(`/frame/${lib}/on`);
       const input = page.locator("input");
-      await input.fill("abc");
+      await input.pressSequentially("abc");
       await expect(page.locator("span")).toHaveText("");
       await input.press("Enter");
       await expect(page.locator("span")).toHaveText("Enter pressed");

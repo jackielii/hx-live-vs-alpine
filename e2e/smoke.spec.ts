@@ -9,7 +9,7 @@ test("every demo frame loads under both libraries without errors", async ({ page
   expect(srcs.length).toBeGreaterThan(12);
   const hx = srcs.filter((s) => s.startsWith("/frame/hxlive/"));
   const al = srcs.filter((s) => s.startsWith("/frame/alpine/"));
-  expect(hx.length).toBeLessThan(al.length); // none rows have no hx-live frame
+  expect(al.length - hx.length).toBe(5); // the five none rows have no hx-live frame
   for (const src of srcs) {
     const p = await context.newPage();
     const errors: string[] = [];
