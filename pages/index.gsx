@@ -47,7 +47,7 @@ component Index(exs []examples.Example) {
 						<ui.Card id={ex.Slug}>
 							<ui.CardHeader>
 								<ui.CardTitle>{ ex.Title }</ui.CardTitle>
-								<ui.CardDescription class="prose prose-sm max-w-none">{ gsx.Raw(ex.NotesHTML) }</ui.CardDescription>
+								<ui.CardDescription class="space-y-2">{ gsx.Raw(ex.NotesHTML) }</ui.CardDescription>
 							</ui.CardHeader>
 							<ui.CardContent class="grid grid-cols-2 gap-6 px-4">
 								<column lib={examples.Alpine} ex={ex}/>
@@ -70,7 +70,7 @@ component column(lib examples.Lib, ex examples.Example) {
 			data-frame
 			src={src}
 			title={ex.Title + " — " + lib.Label()}
-			class="w-full rounded-md border bg-white"
+			class="w-full rounded-md border bg-white box-content"
 			style="height: 120px"
 		></iframe>
 		<pre class="overflow-x-auto rounded-md bg-muted p-3"><code>{ ex.Fragment(lib) }</code></pre>

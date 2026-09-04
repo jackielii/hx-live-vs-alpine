@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "go tool gsx dev",
-    "build": "vite build",
+    "build": "vite build && touch dist/.gitkeep",
     "e2e:serve": "npm run build && go tool gsx generate && GO_PORT=8899 go run .",
     "e2e": "playwright test -c e2e"
   },

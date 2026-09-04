@@ -15,6 +15,7 @@ short form when it detects Alpine. The hx-live ports target htmx 4.0.0's typed s
 
 ## Test
 
+    npm install && npm run build            # once, so dist/ exists for go:embed
     go tool gsx generate && go test ./...   # routes and manifest
     npm run e2e                             # Playwright parity, both libraries
 
