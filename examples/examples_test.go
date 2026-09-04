@@ -5,42 +5,119 @@ import (
 	"testing"
 )
 
-func TestLoadReturnsSixExamplesInOrder(t *testing.T) {
+func mustLoad(t *testing.T) []Example {
+	t.Helper()
 	exs, err := Load()
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []string{"counter", "dropdown", "search", "tabs", "transition", "classbind"}
-	if len(exs) != len(want) {
-		t.Fatalf("got %d examples, want %d", len(exs), len(want))
+	return exs
+}
+
+func TestLoadKeepsTheOriginalSixFirst(t *testing.T) {
+	exs := mustLoad(t)
+	want := []string{"counter", "dropdown", "classbind"}
+	for i, slug := range want {
+		if exs[i].Slug != slug {
+			t.Errorf("index %d: slug %q, want %q", i, exs[i].Slug, slug)
+		}
 	}
-	for i, ex := range exs {
-		if ex.Slug != want[i] {
-			t.Errorf("index %d: slug %q, want %q", i, ex.Slug, want[i])
-		}
-		if ex.Title == "" {
-			t.Errorf("%s: empty title", ex.Slug)
-		}
-		if !strings.Contains(ex.Alpine, "x-data") {
-			t.Errorf("%s: alpine fragment lacks x-data", ex.Slug)
-		}
-		if strings.Contains(ex.HxLive, "x-data") {
-			t.Errorf("%s: hxlive fragment contains x-data", ex.Slug)
-		}
-		if strings.TrimSpace(ex.HxLive) == "" {
-			t.Errorf("%s: empty hxlive fragment", ex.Slug)
-		}
-		if !strings.Contains(ex.NotesHTML, "<p>") {
-			t.Errorf("%s: notes not rendered to HTML: %q", ex.Slug, ex.NotesHTML)
+	for _, slug := range []string{"search", "tabs", "transition"} {
+		if _, ok := Find(exs, slug); !ok {
+			t.Errorf("%s missing", slug)
 		}
 	}
 }
 
-func TestFragmentAndFind(t *testing.T) {
-	exs, err := Load()
+func TestLoadInvariants(t *testing.T) {
+	exs := mustLoad(t)
+	seen := map[string]string{}
+	lastGroup := -1
+	for _, ex := range exs {
+		if ex.Title == "" || ex.Group == "" || ex.Status == "" || len(ex.Features) == 0 {
+			t.Errorf("%s: incomplete metadata %+v", ex.Slug, ex)
+		}
+		if strings.TrimSpace(ex.Alpine) == "" {
+			t.Errorf("%s: empty alpine fragment", ex.Slug)
+		}
+		if strings.Contains(ex.HxLive, "x-data") {
+			t.Errorf("%s: hxlive fragment contains x-data", ex.Slug)
+		}
+		if ex.HasDemo() != (strings.TrimSpace(ex.HxLive) != "") {
+			t.Errorf("%s: status %q but hxlive fragment present=%v", ex.Slug, ex.Status, ex.HxLive != "")
+		}
+		if !strings.Contains(ex.NotesHTML, "<p>") {
+			t.Errorf("%s: notes not rendered", ex.Slug)
+		}
+		for _, f := range ex.Features {
+			if prev, dup := seen[f]; dup {
+				t.Errorf("feature %q on both %s and %s", f, prev, ex.Slug)
+			}
+			seen[f] = ex.Slug
+		}
+		gi := groupIndex(ex.Group)
+		if gi < lastGroup {
+			t.Errorf("%s: group %q out of order", ex.Slug, ex.Group)
+		}
+		lastGroup = gi
+	}
+}
+
+func groupIndex(g Group) int {
+	for i, x := range Groups {
+		if x == g {
+			return i
+		}
+	}
+	return -1
+}
+
+func TestFeaturesCoversEveryCardFeatureOnce(t *testing.T) {
+	exs := mustLoad(t)
+	feats, err := Features(exs)
 	if err != nil {
 		t.Fatal(err)
 	}
+	fromCards := map[string]bool{}
+	for _, ex := range exs {
+		for _, f := range ex.Features {
+			fromCards[f] = true
+		}
+	}
+	fromMatrix := map[string]int{}
+	for _, f := range feats {
+		fromMatrix[f.Feature]++
+		ex, ok := Find(exs, f.Slug)
+		if !ok || ex.Title != f.Title || ex.Group != f.Group || ex.Status != f.Status {
+			t.Errorf("matrix line %q does not match card %q", f.Feature, f.Slug)
+		}
+	}
+	for f := range fromCards {
+		if fromMatrix[f] != 1 {
+			t.Errorf("feature %q appears %d times in the matrix", f, fromMatrix[f])
+		}
+	}
+	if len(fromMatrix) != len(fromCards) {
+		t.Errorf("matrix has %d features, cards have %d", len(fromMatrix), len(fromCards))
+	}
+}
+
+func TestByGroupAndLabels(t *testing.T) {
+	exs := mustLoad(t)
+	total := 0
+	for _, g := range Groups {
+		if g.Label() == "" {
+			t.Errorf("group %q has no label", g)
+		}
+		total += len(ByGroup(exs, g))
+	}
+	if total != len(exs) {
+		t.Errorf("ByGroup partitions %d of %d", total, len(exs))
+	}
+}
+
+func TestFragmentAndFind(t *testing.T) {
+	exs := mustLoad(t)
 	ex, ok := Find(exs, "counter")
 	if !ok {
 		t.Fatal("counter not found")
