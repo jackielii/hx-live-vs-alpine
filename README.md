@@ -1,40 +1,28 @@
-# hx-live-vs-alpine
+# hx-live vs Alpine
 
-A server-rendered gsx app with Vite assets and live reload.
+Six examples from the Alpine.js docs, each ported like-for-like to htmx 4's
+`hx-live` extension, rendered side by side with the source that runs them.
+Raw material for a blog post.
 
-## Prerequisites
+Every demo runs in its own iframe that loads exactly one library, because
+Alpine and hx-live both claim the `:attr` shorthand and hx-live disables its
+short form when it detects Alpine. The hx-live ports target htmx 4.0.0's typed state bags (`data.*`, `aria.*`, `class.*`).
 
-- Go 1.24+
-- Node.js 18+ with npm — for Vite, which bundles this template's CSS and
-  JavaScript. gsx itself needs only Go; the built server runs without Node.
+## Run
 
-## Setup
+    npm install
+    npm run dev          # gsx dev: Vite + Go with reload
 
-```sh
-go get -tool github.com/gsxhq/gsx/cmd/gsx@latest
-go mod tidy
-npm install
-```
+## Test
 
-## Develop
+    go tool gsx generate && go test ./...   # routes and manifest
+    npm run e2e                             # Playwright parity, both libraries
 
-```sh
-npm run dev
-```
+## Layout
 
-Open the URL printed in the terminal. Edit `app.gsx` and save to rebuild the Go
-server and reload the browser.
+- `examples/<slug>/alpine.html`, `hxlive.html`, `notes.md`: the content.
+- `pages/frame.gsx`: the single-library iframe document.
+- `pages/index.gsx`: the comparison page.
+- `web/frame-alpine.js`, `web/frame-hxlive.js`: one Vite entry per library.
 
-Generated `*.x.go` files are ignored. Do not edit or commit them.
-
-## Production build
-
-```sh
-npm run build
-go tool gsx generate
-go build -o app
-./app
-```
-
-The server listens on `:7777` and embeds the built assets, so the binary is the
-only thing you deploy — no Node.js, npm install, or Vite in production.
+Pinned: `htmx.org@4.0.0`, `alpinejs@3.17.1`.
