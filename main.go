@@ -25,7 +25,7 @@ var distFS embed.FS
 var publicFS embed.FS
 
 // newHandler builds the mux. Pure over its inputs so tests can drive it.
-func newHandler(v *vite.Vite, exs []examples.Example) http.Handler {
+func newHandler(v *vite.Vite, exs []examples.Example, feats []examples.FeatureRow) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("/public/", http.FileServerFS(publicFS))
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
@@ -35,7 +35,7 @@ func newHandler(v *vite.Vite, exs []examples.Example) http.Handler {
 		mux.Handle("/static/", v.StaticHandler())
 	}
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
-		render(w, r, pages.Index(exs))
+		render(w, r, pages.Index(exs, feats))
 	})
 	mux.HandleFunc("GET /frame/{lib}/{slug}", func(w http.ResponseWriter, r *http.Request) {
 		lib, ok := examples.ParseLib(r.PathValue("lib"))
@@ -44,7 +44,7 @@ func newHandler(v *vite.Vite, exs []examples.Example) http.Handler {
 			return
 		}
 		ex, ok := examples.Find(exs, r.PathValue("slug"))
-		if !ok {
+		if !ok || (lib == examples.HxLive && !ex.HasDemo()) {
 			http.NotFound(w, r)
 			return
 		}
@@ -70,9 +70,13 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	feats, err := examples.Features(exs)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	port := cmp.Or(os.Getenv("GO_PORT"), "7777")
-	srv := &http.Server{Addr: ":" + port, Handler: v.Middleware(newHandler(v, exs))}
+	srv := &http.Server{Addr: ":" + port, Handler: v.Middleware(newHandler(v, exs, feats))}
 
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {

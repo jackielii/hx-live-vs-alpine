@@ -33,7 +33,11 @@ func newTestServer(t *testing.T) *httptest.Server {
 	if err != nil {
 		t.Fatal(err)
 	}
-	srv := httptest.NewServer(v.Middleware(newHandler(v, exs)))
+	feats, err := examples.Features(exs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv := httptest.NewServer(v.Middleware(newHandler(v, exs, feats)))
 	t.Cleanup(srv.Close)
 	return srv
 }
@@ -116,6 +120,57 @@ func TestIndexListsEveryExampleWithBothSources(t *testing.T) {
 		}
 		if ex.HxLive != "" && strings.Contains(body, ex.HxLive) {
 			t.Errorf("%s: raw hxlive fragment leaked unescaped into the index", ex.Slug)
+		}
+		if !ex.HasDemo() && strings.Contains(body, `src="/frame/hxlive/`+ex.Slug+`"`) {
+			t.Errorf("%s: none row has an hxlive iframe", ex.Slug)
+		}
+	}
+}
+
+func TestIndexRendersTheMatrix(t *testing.T) {
+	srv := newTestServer(t)
+	exs, _ := examples.Load()
+	feats, _ := examples.Features(exs)
+	_, body := get(t, srv, "/")
+	start := strings.Index(body, `id="matrix"`)
+	if start < 0 {
+		t.Fatal("no matrix table")
+	}
+	matrix := body[start:]
+	if end := strings.Index(matrix, "</table>"); end > 0 {
+		matrix = matrix[:end]
+	}
+	for _, f := range feats {
+		if !strings.Contains(matrix, html.EscapeString(f.Feature)) {
+			t.Errorf("matrix lacks feature %q", f.Feature)
+		}
+		if !strings.Contains(matrix, `href="#`+f.Slug+`"`) {
+			t.Errorf("matrix lacks link to %s", f.Slug)
+		}
+		if !strings.Contains(matrix, string(f.Status)) {
+			t.Errorf("matrix lacks status %q", f.Status)
+		}
+	}
+	for _, g := range examples.Groups {
+		if !strings.Contains(matrix, g.Label()) {
+			t.Errorf("matrix lacks group heading %q", g.Label())
+		}
+	}
+}
+
+func TestNoneRowsHaveNoHxliveFrame(t *testing.T) {
+	srv := newTestServer(t)
+	exs, _ := examples.Load()
+	for _, ex := range exs {
+		status, _ := get(t, srv, "/frame/hxlive/"+ex.Slug)
+		if ex.HasDemo() && status != 200 {
+			t.Errorf("%s: hxlive frame status %d", ex.Slug, status)
+		}
+		if !ex.HasDemo() && status != 404 {
+			t.Errorf("%s: none row hxlive frame status %d, want 404", ex.Slug, status)
+		}
+		if status, _ := get(t, srv, "/frame/alpine/"+ex.Slug); status != 200 {
+			t.Errorf("%s: alpine frame status %d", ex.Slug, status)
 		}
 	}
 }
