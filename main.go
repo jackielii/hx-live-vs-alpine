@@ -11,7 +11,11 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gsxhq/gsx"
 	"github.com/gsxhq/vite"
+
+	"github.com/jackielii/hx-live-vs-alpine/examples"
+	"github.com/jackielii/hx-live-vs-alpine/pages"
 )
 
 //go:embed all:dist
@@ -20,13 +24,8 @@ var distFS embed.FS
 //go:embed all:public
 var publicFS embed.FS
 
-func main() {
-	devURL := os.Getenv("VITE_DEV_URL") // "" in prod
-	v, err := vite.New(vite.Config{DevURL: devURL, DevBase: "/__vite/", Dist: distFS, DistDir: "dist"})
-	if err != nil {
-		log.Fatal(err)
-	}
-
+// newHandler builds the mux. Pure over its inputs so tests can drive it.
+func newHandler(v *vite.Vite, exs []examples.Example) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("/public/", http.FileServerFS(publicFS))
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
@@ -35,21 +34,46 @@ func main() {
 	if !v.Dev() {
 		mux.Handle("/static/", v.StaticHandler())
 	}
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err := Index("gsx + Vite").Render(r.Context(), w); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
+	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
+		render(w, r, pages.Index(exs))
 	})
+	mux.HandleFunc("GET /frame/{lib}/{slug}", func(w http.ResponseWriter, r *http.Request) {
+		lib, ok := examples.ParseLib(r.PathValue("lib"))
+		if !ok {
+			http.NotFound(w, r)
+			return
+		}
+		ex, ok := examples.Find(exs, r.PathValue("slug"))
+		if !ok {
+			http.NotFound(w, r)
+			return
+		}
+		render(w, r, pages.Frame(lib, ex))
+	})
+	return mux
+}
 
-	// v.Middleware injects *vite.Vite into each request's context so components
-	// read the asset bundle from ctx (no prop threading).
+func render(w http.ResponseWriter, r *http.Request, n gsx.Node) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if err := n.Render(r.Context(), w); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func main() {
+	devURL := os.Getenv("VITE_DEV_URL") // "" in prod
+	v, err := vite.New(vite.Config{DevURL: devURL, DevBase: "/__vite/", Dist: distFS, DistDir: "dist"})
+	if err != nil {
+		log.Fatal(err)
+	}
+	exs, err := examples.Load()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	port := cmp.Or(os.Getenv("GO_PORT"), "7777")
-	srv := &http.Server{Addr: ":" + port, Handler: v.Middleware(mux)}
+	srv := &http.Server{Addr: ":" + port, Handler: v.Middleware(newHandler(v, exs))}
 
-	// Serve in the background so the main goroutine can wait for a shutdown
-	// signal. gsx dev sends SIGTERM on each rebuild; shutting down gracefully
-	// releases the port BEFORE exit, so the next build re-binds cleanly.
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatal(err)
