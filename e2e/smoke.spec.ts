@@ -19,7 +19,7 @@ test("every demo frame loads under both libraries without errors", async ({ page
     p.on("pageerror", (e) => errors.push(String(e)));
     const res = await p.goto(src);
     expect(res?.status(), src).toBe(200);
-    await expect(p.locator("body")).not.toBeEmpty();
+    expect(await p.locator("body > *").count(), src).toBeGreaterThan(0);
     await p.waitForTimeout(150);
     expect(errors, src).toEqual([]);
     await p.close();

@@ -3,7 +3,7 @@
 window.addEventListener("message", (e) => {
   if (!e.data || e.data.type !== "hx-vs-alpine:height") return;
   const h = e.data.height;
-  if (!Number.isFinite(h) || h < 40) return;
+  if (!Number.isFinite(h) || h <= 0) return;
   for (const frame of document.querySelectorAll("iframe[data-frame]")) {
     if (frame.contentWindow === e.source) frame.style.height = h + "px";
   }
