@@ -1,6 +1,7 @@
 package main
 
 import (
+	"html"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -81,6 +82,36 @@ func TestFrameUnknownLibOrSlugIs404(t *testing.T) {
 	for _, p := range []string{"/frame/react/counter", "/frame/alpine/nope"} {
 		if status, _ := get(t, srv, p); status != 404 {
 			t.Errorf("%s: status %d, want 404", p, status)
+		}
+	}
+}
+
+func TestIndexListsEveryExampleWithBothSources(t *testing.T) {
+	srv := newTestServer(t)
+	exs, _ := examples.Load()
+	status, body := get(t, srv, "/")
+	if status != 200 {
+		t.Fatalf("status %d", status)
+	}
+	if !strings.Contains(body, "/static/assets/main.js") {
+		t.Error("index does not load the outer bundle")
+	}
+	for _, ex := range exs {
+		if !strings.Contains(body, `id="`+ex.Slug+`"`) {
+			t.Errorf("%s: no anchor", ex.Slug)
+		}
+		for _, lib := range []examples.Lib{examples.Alpine, examples.HxLive} {
+			src := "/frame/" + string(lib) + "/" + ex.Slug
+			if !strings.Contains(body, `src="`+src+`"`) {
+				t.Errorf("%s: no iframe for %s", ex.Slug, lib)
+			}
+			escaped := html.EscapeString(ex.Fragment(lib))
+			if !strings.Contains(body, escaped) {
+				t.Errorf("%s: escaped %s fragment not shown", ex.Slug, lib)
+			}
+		}
+		if strings.Contains(body, ex.HxLive) {
+			t.Errorf("%s: raw hxlive fragment leaked unescaped into the index", ex.Slug)
 		}
 	}
 }
