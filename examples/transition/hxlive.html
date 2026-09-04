@@ -1,0 +1,11 @@
+<div data-open="false">
+    <button hx-on:click="data.open = !data.open">Toggle</button>
+
+    <div class="fade" :.open="data.open">
+        Hello 👋
+    </div>
+</div>
+<style>
+    .fade { opacity: 0; visibility: hidden; transition: opacity .3s, visibility .3s; }
+    .fade.open { opacity: 1; visibility: visible; }
+</style>

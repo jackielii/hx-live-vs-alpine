@@ -1,0 +1,11 @@
+<div x-data="{ tab: 'a' }">
+    <nav>
+        <button @click="tab = 'a'" :class="{ active: tab === 'a' }">A</button>
+        <button @click="tab = 'b'" :class="{ active: tab === 'b' }">B</button>
+    </nav>
+    <div x-show="tab === 'a'">Panel A</div>
+    <div x-show="tab === 'b'">Panel B</div>
+</div>
+<style>
+    .active { background: #18181b; color: #fff; border-color: #18181b; }
+</style>

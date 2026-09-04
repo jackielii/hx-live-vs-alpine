@@ -1,0 +1,1 @@
+hx-live has no transition directive. Enter and leave are delegated to CSS: the binding only toggles a class, and the stylesheet animates opacity while flipping visibility so the hidden element stays out of the accessibility tree. The `<style>` is part of the shown source on purpose.

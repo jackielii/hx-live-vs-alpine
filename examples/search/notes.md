@@ -1,0 +1,1 @@
+This is the one that changes model, not just syntax. hx-live has no loop primitive and no two-way binding: the list is already HTML, so filtering means hiding rows, and the input's own `.value` is the state. Alpine derives DOM from data; hx-live derives attributes from DOM. A larger or server-owned list would be an htmx request, not client-side filtering.

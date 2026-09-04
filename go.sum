@@ -25,6 +25,8 @@ github.com/tdewolff/parse/v2 v2.8.13 h1:si/8rLw5BZZTWCCiMm9A3f6x+RmqYfrkEeXCgpX5
 github.com/tdewolff/parse/v2 v2.8.13/go.mod h1:XdsoSFThlVIRIajAuqz1evNY7bagZS8LBOPA3aVopwQ=
 github.com/tdewolff/test v1.0.12 h1:7F21DqIajswxuche0geHdrUZRCWE4oko4b7bcmkkrxk=
 github.com/tdewolff/test v1.0.12/go.mod h1:XPuWBzvdUzhCuxWO1ojpXsyzsA5bFoS3tO/Q3kFuTG8=
+github.com/yuin/goldmark v1.8.6 h1:d0VcaP1sx9GkFVkoW+KtggpGi2KZ965i14b0+bDQST4=
+github.com/yuin/goldmark v1.8.6/go.mod h1:ip/1k0VRfGynBgxOz0yCqHrbZXhcjxyuS66Brc7iBKg=
 golang.org/x/exp/typeparams v0.0.0-20260611194520-c48552f49976 h1:GTD/WuaexTazIG/SxLOz4rEKZPDVilmVVC2nz4xhwfE=
 golang.org/x/exp/typeparams v0.0.0-20260611194520-c48552f49976/go.mod h1:PqrXSW65cXDZH0k4IeUbhmg/bcAZDbzNz3byBpKCsXo=
 golang.org/x/mod v0.37.0 h1:vF1DjpVEshcIqoEaauuHebaLk1O1forxjxBaVn884JQ=

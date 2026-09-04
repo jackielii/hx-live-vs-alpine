@@ -1,0 +1,9 @@
+<div>
+    <input placeholder="Search...">
+
+    <ul hx-live="for (let li of q('li in this')) li.hidden = !li.textContent.startsWith(q('previous input').value)">
+        <li>foo</li>
+        <li>bar</li>
+        <li>baz</li>
+    </ul>
+</div>

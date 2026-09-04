@@ -1,0 +1,1 @@
+Open state lives in `aria-expanded` on the button, which doubles as the accessibility contract. `attr('aria-expanded')` reads back a boolean, so `:hidden` is a plain negation. Both libraries attach the outside listener on `document`, so the button's own click handler runs first in both; toggling open then closing does not fight.

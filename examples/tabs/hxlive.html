@@ -1,0 +1,11 @@
+<div data-tab="a">
+    <nav>
+        <button hx-on:click="data.tab = 'a'" :.active="data.tab === 'a'">A</button>
+        <button hx-on:click="data.tab = 'b'" :.active="data.tab === 'b'">B</button>
+    </nav>
+    <div :hidden="data.tab !== 'a'">Panel A</div>
+    <div :hidden="data.tab !== 'b'">Panel B</div>
+</div>
+<style>
+    .active { background: #18181b; color: #fff; border-color: #18181b; }
+</style>

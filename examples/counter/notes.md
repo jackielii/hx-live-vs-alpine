@@ -1,0 +1,1 @@
+Alpine keeps `count` in a reactive object declared by `x-data`. hx-live keeps it in the DOM: `data.count` reads and writes the closest `data-count` attribute, JSON round-tripped so the number stays a number. `:text` re-runs after any DOM mutation, so the span follows the attribute.

@@ -1,0 +1,6 @@
+<div x-data="{ pressed: false }">
+    <button @click="pressed = ! pressed" :class="{ on: pressed }">Bold</button>
+</div>
+<style>
+    .on { font-weight: bold; }
+</style>

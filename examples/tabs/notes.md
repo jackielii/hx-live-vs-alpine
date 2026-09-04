@@ -1,0 +1,1 @@
+Closest like-for-like: the selected tab is a `data-tab` attribute on the wrapper, `:.active` binds one class, `:hidden` swaps panels. The more idiomatic hx-live shape is `role="tab"` buttons with `take('aria-selected', '[role=tab]')`, which moves the attribute between peers and drives CSS off `[aria-selected=true]`.

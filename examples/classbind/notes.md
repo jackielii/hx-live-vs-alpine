@@ -1,0 +1,1 @@
+Same object-form `:class` in both. Alpine's condition is a property; hx-live's is the element's own `aria-pressed`, toggled by `toggle('aria-pressed')`, which flips the string between `"true"` and `"false"` while `attr()` reads it back as a boolean.
