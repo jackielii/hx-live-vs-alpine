@@ -1,7 +1,7 @@
 <div>
     <button aria-pressed="false"
-            hx-on:click="toggle('aria-pressed')"
-            :class="{ on: attr['aria-pressed'] }">Bold</button>
+            hx-on:click="aria.pressed = !aria.pressed"
+            :class="{ on: aria.pressed }">Bold</button>
 </div>
 <style>
     .on { font-weight: bold; }
