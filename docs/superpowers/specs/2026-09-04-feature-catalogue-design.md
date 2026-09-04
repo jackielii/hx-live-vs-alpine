@@ -75,6 +75,8 @@ fragment. Existing cards keep their fragments.
 
 **counter** (exists) — features `x-data`, `x-text`, `$data` — equivalent.
 
+**tabs** (exists) — feature `x-bind (class, tabs)` — equivalent. Scenario card kept from the first spec.
+
 **dropdown** (exists) — features `x-show`, `x-on (.outside)` — equivalent.
 
 **classbind** (exists) — feature `x-bind (class object)` — equivalent.
@@ -395,11 +397,11 @@ Notes: no per-key watcher; an `hx-live` expression is an effect that also runs o
 
 ## Matrix order
 
-Directives: x-bind, x-bind (class object), x-cloak, x-data, x-effect, x-for, x-for (filtering), x-html, x-id, x-if, x-ignore, x-init, x-model, x-model (filtering), x-modelable, x-on (modifiers), x-on (.outside), x-ref, x-show, x-teleport, x-text, x-transition.
+Directives: x-bind, x-bind (class object), x-bind (class, tabs), x-cloak, x-data, x-effect, x-for, x-for (filtering), x-html, x-id, x-if, x-ignore, x-init, x-model, x-model (filtering), x-modelable, x-on (modifiers), x-on (.outside), x-ref, x-show, x-teleport, x-text, x-transition.
 Magics: $data, $dispatch, $el, $id, $nextTick, $refs, $root, $store, $watch.
 Globals: Alpine.bind, Alpine.data, Alpine.store.
 
-Thirty-four lines, thirty distinct Alpine features (the "(filtering)", "(class object)", "(.outside)" and "(modifiers)" lines are the same feature shown twice, and count once).
+Thirty-five lines, thirty distinct Alpine features (the "(filtering)", "(class object)", "(class, tabs)", "(.outside)" and "(modifiers)" lines show a feature more than once and count once). The existing tabs scenario card stays, keyed as `x-bind (class, tabs)`.
 
 ## Verification
 
