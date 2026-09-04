@@ -1,0 +1,1 @@
+Adapted from the docs, which log to the console. `$watch` runs a callback when one named property changes. hx-live has no per-property watcher; an `hx-live` expression is an effect that runs whenever anything changes, and it also runs once at load, so the hx-live span reads "open is now false" before any click while Alpine's starts empty.

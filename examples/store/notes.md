@@ -1,0 +1,1 @@
+Adapted from the docs' dark-mode store so that two separate components share it. `Alpine.store` is a global reactive object registered in a script. In hx-live, shared state is a `data-*` attribute on whatever ancestor the components have in common, up to `<body>`; every `data.dark` inside resolves to it.

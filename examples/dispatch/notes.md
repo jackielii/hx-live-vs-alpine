@@ -1,0 +1,1 @@
+Adapted from the docs, which alert. `$dispatch` and `trigger()` both fire a bubbling `CustomEvent`, and both sides listen for it on an ancestor with the same attribute shape: `@notify` versus `hx-on:notify`.

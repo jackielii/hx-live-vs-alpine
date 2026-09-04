@@ -1,0 +1,1 @@
+Adapted from the docs so the bundle does something visible: the button counts to three and then disables itself. `Alpine.bind` packages attributes and listeners for reuse across elements. hx-live has no equivalent; an attribute bundle is a template concern, and a gsx component that emits `hx-on:click` and `:disabled` plays the same role.

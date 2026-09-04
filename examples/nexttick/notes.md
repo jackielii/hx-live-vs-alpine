@@ -1,0 +1,1 @@
+Adapted from the docs, which log to the console. Both defer a read until after the pending re-render: the span shows the button's new text, not its old one. Alpine's `$nextTick` waits for its reactive flush; hx-live's `nextFrame()` waits for the next animation frame, after its mutation-driven recompute has run.

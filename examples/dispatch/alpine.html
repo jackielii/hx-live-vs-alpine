@@ -1,0 +1,4 @@
+<div x-data="{ message: '' }" @notify="message = 'Notified!'">
+    <button @click="$dispatch('notify')">Notify</button>
+    <span x-text="message"></span>
+</div>

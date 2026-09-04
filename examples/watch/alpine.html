@@ -1,0 +1,4 @@
+<div x-data="{ open: false, log: '' }" x-init="$watch('open', value => log = 'open is now ' + value)">
+    <button @click="open = ! open">Toggle Open</button>
+    <span x-text="log"></span>
+</div>

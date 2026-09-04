@@ -1,0 +1,4 @@
+<div x-data="{ title: 'Hello', after: '' }">
+    <button @click="title = 'Hello World!'; $nextTick(() => { after = $el.innerText })" x-text="title"></button>
+    <span x-text="after"></span>
+</div>

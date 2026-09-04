@@ -142,6 +142,14 @@ var order = []row{
 	{"teleport", "Teleport", Directive, []string{"x-teleport"}, None},
 	{"modelable", "Modelable", Directive, []string{"x-modelable"}, None},
 	{"id", "Unique ids", Directive, []string{"x-id", "$id"}, None},
+	{"el", "The current element", Magic, []string{"$el"}, Equivalent},
+	{"dispatch", "Dispatching events", Magic, []string{"$dispatch"}, Equivalent},
+	{"root", "The component root", Magic, []string{"$root"}, Equivalent},
+	{"nexttick", "After the next render", Magic, []string{"$nextTick"}, Equivalent},
+	{"store", "Shared state", Magic, []string{"$store", "Alpine.store"}, Equivalent},
+	{"watch", "Watching a value", Magic, []string{"$watch"}, Workaround},
+	{"alpine-data", "Reusable components", Global, []string{"Alpine.data"}, None},
+	{"alpine-bind", "Reusable attribute bundles", Global, []string{"Alpine.bind"}, None},
 }
 
 // featureOrder is the matrix order: Alpine docs order within each group.
@@ -150,7 +158,8 @@ var featureOrder = []string{
 	"x-for", "x-for (filtering)", "x-html", "x-id", "x-if", "x-ignore", "x-init",
 	"x-model", "x-model (filtering)", "x-modelable", "x-on (modifiers)", "x-on (.outside)",
 	"x-ref", "x-show", "x-teleport", "x-text", "x-transition",
-	"$data", "$id", "$refs",
+	"$data", "$dispatch", "$el", "$id", "$nextTick", "$refs", "$root", "$store", "$watch",
+	"Alpine.bind", "Alpine.data", "Alpine.store",
 }
 
 // Load reads every card from the embedded files. A missing or empty file, a

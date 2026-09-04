@@ -196,3 +196,39 @@ func TestParseLib(t *testing.T) {
 		t.Error("wrong entry paths")
 	}
 }
+
+func TestMatrixIsComplete(t *testing.T) {
+	exs := mustLoad(t)
+	feats, err := Features(exs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{
+		"x-bind", "x-bind (class object)", "x-bind (class, tabs)", "x-cloak", "x-data", "x-effect",
+		"x-for", "x-for (filtering)", "x-html", "x-id", "x-if", "x-ignore", "x-init",
+		"x-model", "x-model (filtering)", "x-modelable", "x-on (modifiers)", "x-on (.outside)",
+		"x-ref", "x-show", "x-teleport", "x-text", "x-transition",
+		"$data", "$dispatch", "$el", "$id", "$nextTick", "$refs", "$root", "$store", "$watch",
+		"Alpine.bind", "Alpine.data", "Alpine.store",
+	}
+	if len(feats) != len(want) {
+		t.Fatalf("matrix has %d lines, want %d", len(feats), len(want))
+	}
+	for i, f := range feats {
+		if f.Feature != want[i] {
+			t.Errorf("line %d: %q, want %q", i, f.Feature, want[i])
+		}
+	}
+	if len(exs) != 28 {
+		t.Errorf("got %d cards, want 28", len(exs))
+	}
+	none := 0
+	for _, ex := range exs {
+		if !ex.HasDemo() {
+			none++
+		}
+	}
+	if none != 5 {
+		t.Errorf("got %d none rows, want 5", none)
+	}
+}
