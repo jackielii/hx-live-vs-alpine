@@ -1,0 +1,40 @@
+# hx-live-vs-alpine
+
+A server-rendered gsx app with Vite assets and live reload.
+
+## Prerequisites
+
+- Go 1.24+
+- Node.js 18+ with npm — for Vite, which bundles this template's CSS and
+  JavaScript. gsx itself needs only Go; the built server runs without Node.
+
+## Setup
+
+```sh
+go get -tool github.com/gsxhq/gsx/cmd/gsx@latest
+go mod tidy
+npm install
+```
+
+## Develop
+
+```sh
+npm run dev
+```
+
+Open the URL printed in the terminal. Edit `app.gsx` and save to rebuild the Go
+server and reload the browser.
+
+Generated `*.x.go` files are ignored. Do not edit or commit them.
+
+## Production build
+
+```sh
+npm run build
+go tool gsx generate
+go build -o app
+./app
+```
+
+The server listens on `:7777` and embeds the built assets, so the binary is the
+only thing you deploy — no Node.js, npm install, or Vite in production.

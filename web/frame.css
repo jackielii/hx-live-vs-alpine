@@ -1,0 +1,24 @@
+body {
+  margin: 0;
+  padding: 16px;
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #18181b;
+  background: #fff;
+}
+button {
+  font: inherit;
+  padding: 4px 12px;
+  border: 1px solid #a1a1aa;
+  border-radius: 6px;
+  background: #f4f4f5;
+  cursor: pointer;
+}
+button:hover { background: #e4e4e7; }
+input {
+  font: inherit;
+  padding: 4px 8px;
+  border: 1px solid #a1a1aa;
+  border-radius: 6px;
+}
+ul { margin: 8px 0 0; padding-left: 20px; }
+nav { display: flex; gap: 4px; margin-bottom: 8px; }

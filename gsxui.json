@@ -1,0 +1,27 @@
+{
+  "ui": "ui",
+  "js": "web/gsxui",
+  "css": "web/gsxui/index.css",
+  "managed": {
+    "gsxui.preset.json": "591a4ec7a1047635544e03e128de02b7e4c617523afd19bf8d5d6e37022cf095",
+    "ui/NOTICE.md": "3e5ae687ead64090db25c7a84d4ad85d3c99304cb5a03cb0509a129010f1536a",
+    "ui/badge.gsx": "55cd01e881376b31e8b688b25850953fc83c51a4c8153df3a3f4073ef0b41111",
+    "ui/button.gsx": "e92692ccf3742ca74b0ec7c918e38a8e618c70fd514aa4f61dcb2a4b2b942423",
+    "ui/card.gsx": "5e064e91149782f955167cc84c6887a03ec3352441dcb52f8edec3f5cf1b0c50",
+    "ui/merge/merge.go": "d9502a04993ccadcba0bfeca0137a1f8948a6045aeef6838f28c2596445b24d4",
+    "web/gsxui/fonts/NOTICE.md": "5eb34652439872f68249cc67323cf589d5ed40a84b30e309e864c26ce207fd76",
+    "web/gsxui/fonts/figtree-latin-wght-normal.woff2": "4ba7d3d096695818fe0686be4f1e82c6b05134e18a22260336130335027462dd",
+    "web/gsxui/fonts/fonts.css": "9e083d1d860aa1eb8639f4d1a9cfc310a4d041bf3ed8195c9a1e0236d15a8a90",
+    "web/gsxui/fonts/geist-latin-wght-normal.woff2": "19f9c92546aa300c312235e3125af1b81394d8db9a4bc4a425cd5b641d2d54e1",
+    "web/gsxui/fonts/inter-latin-wght-normal.woff2": "3100e775e8616cd2611beecfa23a4263d7037586789b43f035236a2e6fbd4c62",
+    "web/gsxui/fonts/jetbrains-mono-latin-wght-normal.woff2": "18be452724bfdc236c074ca94a249a7f41a86752c7d04ab258ce9ed5651f6a7e",
+    "web/gsxui/fonts/noto-sans-latin-wght-normal.woff2": "51ca196f49a33e79e7870ff88ebd2829a3f627a51e7d690986618f0e7ad2b52d",
+    "web/gsxui/fonts/playfair-display-latin-wght-normal.woff2": "e0c764a8e9e1cce92163c55bac4b2ad6cd4cf8c696ce2289ab5c41565e65b7e2",
+    "web/gsxui/foundation.css": "eec35d43fb2cc4e0702866a538ff1395d1f8cc735dff921509974051525adf06",
+    "web/gsxui/gsxui.js": "143da470c72062b3290006c7f6a0185e1643ba820f82fb7e7fd1befc3d00e6f1",
+    "web/gsxui/index.css": "24e78b564f94d66150e95c123f14a35c4818606dcca795a5e33430f35e8c9cd9",
+    "web/gsxui/index.js": "4b5ab291e26db8a36335f641d51678e87613a00f65fad8db4bf0c501a9a815d1",
+    "web/gsxui/style.css": "d6a3bdaf5ed3082cb99f3b2a86148ac4c88b0aebfeec68cca9ff7090a33aafa9",
+    "web/gsxui/theme.css": "a52a3ab202ee3babfec386281cc4b6af67e15390fab32a4c03d49ee3664b169f"
+  }
+}

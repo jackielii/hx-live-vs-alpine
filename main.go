@@ -1,0 +1,69 @@
+package main
+
+import (
+	"cmp"
+	"context"
+	"embed"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"github.com/gsxhq/vite"
+)
+
+//go:embed all:dist
+var distFS embed.FS
+
+//go:embed all:public
+var publicFS embed.FS
+
+func main() {
+	devURL := os.Getenv("VITE_DEV_URL") // "" in prod
+	v, err := vite.New(vite.Config{DevURL: devURL, DevBase: "/__vite/", Dist: distFS, DistDir: "dist"})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	mux := http.NewServeMux()
+	mux.Handle("/public/", http.FileServerFS(publicFS))
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+	if !v.Dev() {
+		mux.Handle("/static/", v.StaticHandler())
+	}
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if err := Index("gsx + Vite").Render(r.Context(), w); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	})
+
+	// v.Middleware injects *vite.Vite into each request's context so components
+	// read the asset bundle from ctx (no prop threading).
+	port := cmp.Or(os.Getenv("GO_PORT"), "7777")
+	srv := &http.Server{Addr: ":" + port, Handler: v.Middleware(mux)}
+
+	// Serve in the background so the main goroutine can wait for a shutdown
+	// signal. gsx dev sends SIGTERM on each rebuild; shutting down gracefully
+	// releases the port BEFORE exit, so the next build re-binds cleanly.
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatal(err)
+		}
+	}()
+	log.Printf("listening on http://localhost:%s", port)
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	<-ctx.Done()
+
+	shutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(shutCtx); err != nil {
+		log.Printf("shutdown: %v", err)
+	}
+}

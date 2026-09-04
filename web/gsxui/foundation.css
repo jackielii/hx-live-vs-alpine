@@ -1,0 +1,631 @@
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-success: var(--success);
+  --color-info: var(--info);
+  --color-warning: var(--warning);
+  --color-overlay: var(--overlay);
+  --color-contrast: var(--contrast);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  :where([data-gsxui-slot-breadcrumb-ellipsis-label]),
+  :where([data-gsxui-slot-pagination-ellipsis-label]),
+  :where([data-gsxui-slot-dialog-close-label]),
+  :where([data-gsxui-slot-sheet-close-label]),
+  :where([data-gsxui-slot-command-dialog-header]),
+  :where([data-gsxui-slot-combobox-bridge]),
+  :where([data-gsxui-slot-carousel-control-label]),
+  :where(
+      [data-gsxui-slot-calendar-caption][data-caption-layout="dropdown"]
+    ) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+  :where([data-gsxui-slot-icon]) {
+    width: 1em;
+    height: 1em;
+  }
+}
+
+@layer components {
+  /* Carousel's native-scroll algorithm requires a scroll viewport, one flex
+     track, and fixed snap items. Spacing and scrollbar treatment remain style. */
+  :where([data-gsxui-slot-carousel-content]) {
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+  }
+  :where(
+      [data-gsxui-slot-carousel-content][data-orientation="vertical"]
+    ) {
+    overflow-x: visible;
+    overflow-y: auto;
+    scroll-snap-type: y mandatory;
+  }
+  :where([data-gsxui-slot-carousel-track]) {
+    display: flex;
+  }
+  :where([data-gsxui-slot-carousel-track][data-orientation="vertical"]) {
+    flex-direction: column;
+  }
+  :where([data-gsxui-slot-carousel-item]) {
+    min-width: 0;
+    flex: 0 0 100%;
+    scroll-snap-align: start;
+  }
+  :where([data-gsxui-slot-carousel-item]:last-child) {
+    scroll-snap-align: end;
+  }
+
+  /* Resizable's live flex-grow algorithm consumes these invariant mechanics.
+     The handle pseudo-element is its operable pointer hit target. */
+  :where([data-gsxui-slot-resizable-panel-group]) {
+    display: flex;
+    width: 100%;
+    height: 100%;
+  }
+  :where(
+      [data-gsxui-slot-resizable-panel-group][aria-orientation="vertical"]
+    ) {
+    flex-direction: column;
+  }
+  :where([data-gsxui-slot-resizable-panel]) {
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+  :where([data-gsxui-slot-resizable-handle]) {
+    position: relative;
+    /* display:flex is load-bearing: `flex: none` is the ITEM shorthand
+       (grow/shrink/basis) and does not make this a flex CONTAINER, so
+       without it the align/justify centering of the withHandle grip is
+       inert (upstream base carries `relative flex items-center
+       justify-center` on the handle). */
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+  }
+  :where([data-gsxui-slot-resizable-handle])::after {
+    position: absolute;
+    inset-block: 0;
+    left: 50%;
+    width: 4px;
+    content: "";
+    transform: translateX(-50%);
+  }
+  :where(
+      [data-gsxui-slot-resizable-handle][aria-orientation="horizontal"]
+    )::after {
+    inset-block: auto;
+    inset-inline: 0;
+    top: 50%;
+    width: 100%;
+    height: 4px;
+    transform: translateY(-50%);
+  }
+
+  /* ScrollArea intentionally uses the browser's native scrolling surface. */
+  :where([data-gsxui-slot-scroll-area][data-orientation="vertical"]) {
+    overflow: auto;
+  }
+  :where([data-gsxui-slot-scroll-area][data-orientation="horizontal"]) {
+    overflow-x: auto;
+  }
+}
+
+/* Floating surfaces hit-test only once placed. Between showPopover() and
+   gsxui.js position()'s placement the surface sits at the UA-default popover
+   position — held invisible at opacity 0 by its @starting-style enter arm,
+   but opacity does not disable hit-testing — so a frame landing in that gap
+   re-targets hover onto a box the user never saw, and the placement move then
+   synthesizes pointerover/pointerout that drive hover-is-focus and
+   focus-parking handlers (observed: select wiping the checked item's
+   aria-selected right after open, under CI load). applyPlacement stamps
+   data-gsxui-positioned when it places the box; release() removes it on
+   close, re-arming the gate for the next open (and letting the exit fade
+   pass clicks through). The [popover] guard keeps non-popover renderings of
+   these slots (navigation-menu-content inside a shared viewport) untouched.
+   Every position()-managed popover surface must appear in this list. */
+@layer components {
+  :where(
+      [data-gsxui-slot-combobox-content],
+      [data-gsxui-slot-context-menu-content],
+      [data-gsxui-slot-context-menu-sub-content],
+      [data-gsxui-slot-dropdown-menu-content],
+      [data-gsxui-slot-dropdown-menu-sub-content],
+      [data-gsxui-slot-hover-card-content],
+      [data-gsxui-slot-menubar-content],
+      [data-gsxui-slot-menubar-sub-content],
+      [data-gsxui-slot-navigation-menu-content],
+      [data-gsxui-slot-popover-content],
+      [data-gsxui-slot-select-content],
+      [data-gsxui-slot-tooltip-content]
+    ):where([popover]:not([data-gsxui-positioned])) {
+    pointer-events: none;
+  }
+}
+
+/* Accordion open/close animation over native <details>. */
+:where([data-gsxui-slot-accordion-item])::details-content {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition:
+    grid-template-rows 200ms ease-out,
+    content-visibility 200ms allow-discrete;
+}
+:where([data-gsxui-slot-accordion-item])[open]::details-content {
+  grid-template-rows: 1fr;
+}
+:where([data-gsxui-slot-accordion-content]) {
+  min-height: 0;
+}
+
+/* Sidebar state-machine mechanics. Presentation remains in style.css. */
+@layer components {
+  :where([data-gsxui-slot-sidebar-wrapper]) {
+    display: flex;
+    min-height: 100svh;
+    width: 100%;
+  }
+  :where([data-gsxui-slot-sidebar][data-collapsible="none"]) {
+    display: flex;
+    width: var(--sidebar-width);
+    height: 100%;
+    flex-direction: column;
+  }
+  :where([data-gsxui-slot-sidebar-desktop]) {
+    display: none;
+  }
+  :where([data-gsxui-slot-sidebar-gap]) {
+    position: relative;
+    width: var(--sidebar-width);
+    flex: none;
+  }
+  :where(
+      [data-gsxui-slot-sidebar-desktop][data-collapsible="offcanvas"]
+    )
+    > :where([data-gsxui-slot-sidebar-gap]) {
+    width: 0;
+  }
+  :where(
+      [data-gsxui-slot-sidebar-desktop][data-collapsible="icon"]
+    )
+    > :where([data-gsxui-slot-sidebar-gap]) {
+    width: var(
+      --gsxui-sidebar-collapsed-gap-width,
+      var(--sidebar-width-icon)
+    );
+  }
+  :where([data-gsxui-slot-sidebar-container]) {
+    position: fixed;
+    inset-block: 0;
+    z-index: 10;
+    display: none;
+    width: var(--sidebar-width);
+    height: 100svh;
+  }
+  :where([data-gsxui-slot-sidebar-desktop][data-side="left"])
+    > :where([data-gsxui-slot-sidebar-container]) {
+    left: 0;
+  }
+  :where([data-gsxui-slot-sidebar-desktop][data-side="right"])
+    > :where([data-gsxui-slot-sidebar-container]) {
+    right: 0;
+  }
+  :where(
+      [data-gsxui-slot-sidebar-desktop][data-side="left"][data-collapsible="offcanvas"]
+    )
+    > :where([data-gsxui-slot-sidebar-container]) {
+    left: calc(var(--sidebar-width) * -1);
+  }
+  :where(
+      [data-gsxui-slot-sidebar-desktop][data-side="right"][data-collapsible="offcanvas"]
+    )
+    > :where([data-gsxui-slot-sidebar-container]) {
+    right: calc(var(--sidebar-width) * -1);
+  }
+  :where(
+      [data-gsxui-slot-sidebar-desktop][data-collapsible="icon"]
+    )
+    > :where([data-gsxui-slot-sidebar-container]) {
+    width: var(
+      --gsxui-sidebar-collapsed-container-width,
+      var(--sidebar-width-icon)
+    );
+  }
+  :where([data-gsxui-slot-sidebar-inner]),
+  :where([data-gsxui-slot-sidebar-mobile-inner]) {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+  }
+  :where([data-gsxui-slot-sidebar-inset]) {
+    /* relative from upstream base (`relative flex w-full flex-1 flex-col`):
+       without it, absolutely-positioned descendants of the inset escape to
+       the nearest positioned ancestor outside it. */
+    position: relative;
+    display: flex;
+    width: 100%;
+    flex: 1 1 0%;
+    flex-direction: column;
+  }
+  :where([data-gsxui-slot-sidebar-content]) {
+    display: flex;
+    min-height: 0;
+    flex: 1 1 0%;
+    flex-direction: column;
+    overflow: auto;
+  }
+  :where(
+      [data-gsxui-slot-sidebar-desktop][data-collapsible="icon"]
+    )
+    :where([data-gsxui-slot-sidebar-content]) {
+    overflow: hidden;
+  }
+  :where([data-gsxui-slot-sidebar-rail]) {
+    position: absolute;
+    inset-block: 0;
+    z-index: 20;
+    display: none;
+    width: 1rem;
+    transition: all 150ms linear;
+    transform: translateX(-50%);
+  }
+  :where([data-gsxui-slot-sidebar-rail])::after {
+    position: absolute;
+    inset-block: 0;
+    left: 50%;
+    width: 2px;
+    content: "";
+  }
+  /* Physical, side-keyed rail geometry: which edge the rail hugs, its
+     resize-cursor affordance, and the offcanvas flip (the whole sidebar is
+     off-screen while collapsed, so the still-visible rail hugs the viewport
+     edge instead of centering over a hidden container edge). Upstream keeps
+     every one of these in SidebarRail's own hardcoded className
+     (registry/new-york-v4/ui/sidebar.tsx), not in any per-style
+     style-<name>.css — confirmed identical (only `hover:after:bg-sidebar-
+     border`) across all 8 upstream style files — so this is style-invariant
+     mechanics by upstream's own architecture, the same as the rest of this
+     block, and belongs here rather than in a per-style recipe.
+
+     This content used to live in registry/styles/{nova,maia}/sidebar.css
+     (hand-authored, byte-identical between the two, i.e. already
+     style-invariant in substance) and was silently dropped when Nova's and
+     Maia's sidebar.css were mechanically re-ported from upstream's own
+     narrower .cn-sidebar-rail section — a real regression the layer gate
+     caught via now-stale exemptions, not a new per-style gap to paper over. */
+  :where([data-gsxui-slot-sidebar-desktop][data-side="left"])
+    :where([data-gsxui-slot-sidebar-rail]) {
+    right: -1rem;
+    cursor: w-resize;
+  }
+  :where([data-gsxui-slot-sidebar-desktop][data-side="right"])
+    :where([data-gsxui-slot-sidebar-rail]) {
+    left: 0;
+    cursor: e-resize;
+  }
+  :where(
+      [data-gsxui-slot-sidebar-desktop][data-side="left"][data-state="collapsed"]
+    )
+    :where([data-gsxui-slot-sidebar-rail]) {
+    cursor: e-resize;
+  }
+  :where(
+      [data-gsxui-slot-sidebar-desktop][data-side="right"][data-state="collapsed"]
+    )
+    :where([data-gsxui-slot-sidebar-rail]) {
+    cursor: w-resize;
+  }
+  :where([data-gsxui-slot-sidebar-desktop][data-collapsible="offcanvas"])
+    :where([data-gsxui-slot-sidebar-rail]) {
+    transform: translateX(0);
+  }
+  :where([data-gsxui-slot-sidebar-desktop][data-collapsible="offcanvas"])
+    :where([data-gsxui-slot-sidebar-rail])::after {
+    left: 100%;
+  }
+  :where(
+      [data-gsxui-slot-sidebar-desktop][data-collapsible="offcanvas"][data-side="left"]
+    )
+    :where([data-gsxui-slot-sidebar-rail]) {
+    right: -0.5rem;
+  }
+  :where(
+      [data-gsxui-slot-sidebar-desktop][data-collapsible="offcanvas"][data-side="right"]
+    )
+    :where([data-gsxui-slot-sidebar-rail]) {
+    left: -0.5rem;
+  }
+  :where([data-gsxui-slot-sidebar-desktop][data-collapsible="offcanvas"])
+    :where([data-gsxui-slot-sidebar-rail]):hover {
+    background-color: var(--sidebar);
+  }
+  :where([data-gsxui-slot-sidebar-mobile-content])
+    :where([data-gsxui-slot-sidebar-rail]) {
+    display: none;
+  }
+  :where([data-gsxui-slot-sidebar-group-action])::after,
+  :where([data-gsxui-slot-sidebar-menu-action])::after {
+    position: absolute;
+    inset: -0.5rem;
+    content: "";
+  }
+
+  @media (width >= 40rem) {
+    :where([data-gsxui-slot-sidebar-desktop])
+      :where([data-gsxui-slot-sidebar-rail]) {
+      display: flex;
+    }
+    :where([data-gsxui-slot-sidebar-group-action])::after,
+    :where([data-gsxui-slot-sidebar-menu-action])::after {
+      display: none;
+    }
+  }
+  @media (width >= 48rem) {
+    :where([data-gsxui-slot-sidebar-desktop]) {
+      display: block;
+    }
+    :where([data-gsxui-slot-sidebar-container]) {
+      display: flex;
+    }
+  }
+}
+
+/* Author presentation must never defeat the native closed-dialog state. */
+:where(dialog[data-gsxui-slot-dialog-content]:not([open])) {
+  display: none;
+}
+
+/* Normalize the range input before its presentation rules. */
+input[type="range"] {
+  appearance: none;
+  background: transparent;
+  outline: none;
+}
+
+/* The range thumb pseudo-elements need their own appearance:none to be
+   stylable — the input[type=range] rule above only normalizes the track;
+   without this Chrome/Firefox paint the native (blue) thumb over the
+   recipe's bg-white/border/size chrome. Style-invariant. */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+}
+input[type="range"]::-moz-range-thumb {
+  appearance: none;
+}
+
+/* Native checkbox/radio: the recipe styles the <input> itself as the visual
+   control (border, size, checked:bg-primary, punched-in dot/checkmark), which
+   only renders once the OS-native control is removed. Without appearance:none
+   the browser paints its native (blue) checkbox/radio over the recipe chrome.
+   Style-invariant — the same for every style. */
+input[type="checkbox"],
+input[type="radio"] {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* The command palette's <input> is a bare native text input the recipe only
+   sizes (w-full/text-sm). Strip the UA border/background and — because the
+   dialog auto-focuses it on open — the focus outline, so it reads as shadcn's
+   borderless search field rather than a bordered box. Style-invariant. */
+[data-gsxui-slot-command-input] {
+  border: 0;
+  background: transparent;
+  outline: none;
+}
+
+/* The generic dialog close button sits at top-2 (8px, centre 16px), but the
+   command palette's search-row centre sits lower: command root p-1 (4px) + the
+   pill's own mt-1 inset (4px) + half the h-8 pill (16px) = 24px from the content
+   edge. Drop the close button to top-4 (16px) so its 16px box centres at 24px
+   too, landing on the search row — the same top-4 upstream's command dialog
+   uses. (Calibrated for the h-8 pill styles incl. nova; h-9 pills read ~2px
+   high.) The close button renders through Dialog, whose top-2 is a scanned
+   utility in @layer utilities; an unlayered override cannot reliably beat it
+   across the layer boundary, so this lives in @layer utilities too. The
+   selector's two attribute selectors give it (0,2,0), clearing the layer gate's
+   (0,1,0) floor — same fallout the InputOTP rules below document. */
+@layer utilities {
+  [data-gsxui-slot-command-dialog-content] [data-gsxui-slot-dialog-close-button] {
+    top: 1rem;
+  }
+}
+
+/* InputOTP's one real input must cover the visual slots while remaining
+   focusable and clickable in every style. InputOTP's own migration to the
+   slot axis gave data-gsxui-slot-input-otp/-input real (0,1,0) recipe-class
+   specificity, so these two mechanics rules — previously unlayered and
+   winning outright — now need @layer utilities placement and an unwrapped
+   (no :where()) selector to clear the layer gate's own (0,1,0) floor, same
+   fallout shape the playbook already documents for Label/Separator's
+   composed consumers. */
+@layer utilities {
+  [data-gsxui-slot-input-otp] {
+    position: relative;
+  }
+  [data-gsxui-slot-input-otp-input] {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+  }
+}
+
+/* Sidebar's mobile root composes <ui.Sheet> (ui/sidebar.gsx's SidebarInner),
+   which composes <ui.Dialog> directly. Dialog's migration to the slot axis
+   gave data-gsxui-slot-dialog real (0,1,0)-equivalent Tailwind-scanned
+   utilities — including its own unconditional "display: contents" — so the
+   @media(>=48rem) ":is([data-gsxui-slot-sidebar-mobile-root]) { display:
+   none }" rule above, previously winning within @layer components on
+   specificity alone (:is() at (0,1,0) beating the base rule's :where() at
+   (0,0,0)), can no longer win against Dialog's scanned utility regardless of
+   specificity once both compete across the components/utilities layer
+   boundary. Promoted here, :is() already gives it the (0,1,0) floor this
+   layer's own gate requires. Caught by Playwright, not by
+   stylegen --check-layers (this selector reacts to a marker composed onto
+   an ancestor of the migrated component's own root, a shape the gate does
+   not model), and not by make sweep-compare (a display:none element renders
+   no computed style to diff against). */
+@layer utilities {
+  /* The unconditional half of the same rule, promoted for the same reason by
+     Sheet's migration rather than Dialog's. Sheet's own recipe class now
+     carries scanned utilities on the element SidebarMobileRoot composes, so
+     ":where([data-gsxui-slot-sidebar-mobile-root]) { display: contents }",
+     which lived in the @layer components block above, can no longer win.
+     The value is identical to the "contents" Dialog's root recipe already
+     applies — nothing renders differently — but the rule has to move rather
+     than be deleted: it is what keeps the mobile root transparent
+     independently of whichever component it happens to compose. Unwrapped to
+     clear this layer's (0,1,0) floor, and it must stay ABOVE the
+     @media(>=48rem) block below so the desktop display:none still wins. */
+  [data-gsxui-slot-sidebar-mobile-root] {
+    display: contents;
+  }
+  @media (width >= 48rem) {
+    :is([data-gsxui-slot-sidebar-mobile-root]) {
+      display: none;
+    }
+  }
+}
+
+/* A Sidebar tooltip may enter the top layer only for the collapsed-icon
+   desktop tree. This state gate prevents closed or expanded ghost boxes.
+   It lived in the @layer components block above (with the rest of Sidebar's
+   foundation mechanics) until the 8-style port gave TooltipContent's own
+   recipe a real Tailwind-scanned `[&:popover-open]:inline-flex` utility
+   (apps/v4/registry/styles/style-*.css MARK: Tooltip, verified
+   2026-08-11) — pre-port Tooltip had no popover-open display rule of its
+   own, so this gate always won outright within @layer components. Once
+   Tooltip's recipe carries a real @layer utilities declaration for the same
+   `display` property, this components-layer rule can never win regardless
+   of specificity, same failure shape as the sidebar-mobile-root rule above.
+   Promoted here; the first rule's selector is repeated once for a
+   (0,3,0) floor so it wins the tie against `[&:popover-open]:inline-flex`'s
+   (0,2,0) regardless of bundle source order — same cheap-repetition trick
+   sidebar-menu-button's own icon-collapse rule already uses (see
+   registry/styles/nova/sidebar.css's own comment on that rule). Caught by
+   Playwright (jstest/specs/sidebar-style-contract.spec.ts's "menu item
+   relations reserve action space..." test), not by stylegen --check-layers
+   (this selector reacts to Tooltip's OWN slot attribute stamped by a
+   different component's caller, a shape the gate does not model). */
+@layer utilities {
+  [data-gsxui-slot-sidebar-menu-button-tooltip-content][data-gsxui-slot-sidebar-menu-button-tooltip-content]:popover-open {
+    display: none;
+  }
+  [data-gsxui-slot-sidebar-desktop][data-collapsible="icon"]
+    [data-gsxui-slot-sidebar-menu-button-tooltip-content]:popover-open {
+    display: block;
+  }
+}
+
+/* Select's native form bridge remains available to forms and labels without
+   becoming a second visible control. */
+:where([data-gsxui-slot-select-bridge]) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Sonner's lifecycle computes a bottom-right overlapping stack with inline
+   transforms. These fixed/absolute anchors and hit-testing rules are the
+   invariant mechanics shared by the server and client-created regions. */
+@layer components {
+  :where([data-gsxui-slot-toaster]) {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    z-index: 100;
+    pointer-events: none;
+  }
+  :where([data-gsxui-slot-toast]) {
+    position: absolute;
+    right: var(--gsxui-toast-offset, 0);
+    bottom: var(--gsxui-toast-offset, 0);
+    transform-origin: bottom;
+    pointer-events: auto;
+  }
+}
+
+/* Resizable handle escape hatch: migrating Resizable to the slot axis gave
+   its own recipe classes (registry/styles/{nova,maia}/resizable.css) real
+   (0,1,0) specificity. The layer gate's component-utilities check is
+   whole-component, not per-slot — the handle-grip rule's own "flex"/"w-1"
+   utilities register as utilities the "resizable" component owns, and that
+   shadows the mechanics rules above that set the same CSS properties
+   (display, width) on the handle marker, even unconditionally/under a
+   different aria-orientation branch. Only the two contested properties are
+   promoted here (display from the unconditioned handle rule; width from its
+   aria-orientation="horizontal" rule) — everything else in those rules is
+   uncontested and stays above, same split FieldLabel's migration used
+   (only leading-snug promoted, not the whole declaration). Unwrapped (no
+   :where()) to clear the (0,1,0) specificity floor the layer gate requires
+   of anything left behind here. */
+@layer utilities {
+  [data-gsxui-slot-resizable-handle] {
+    display: flex;
+  }
+  [data-gsxui-slot-resizable-handle][aria-orientation="horizontal"] {
+    width: 100%;
+  }
+}
+

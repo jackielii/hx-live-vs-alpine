@@ -1,1 +1,9 @@
+/node_modules
+/dist/*
+!/dist/.gitkeep
+/bin/
+*.x.go
+.env
+/test-results/
+/playwright-report/
 .remember/
