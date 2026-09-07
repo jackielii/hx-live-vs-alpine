@@ -37,7 +37,7 @@ func testVite(t *testing.T, base string) *vite.Vite {
 	return v
 }
 
-func loadMap(t *testing.T) ([]examples.Example, site.Map) {
+func loadMap(t *testing.T) ([]examples.Example, site.Pages) {
 	t.Helper()
 	exs, err := examples.Load()
 	if err != nil {
@@ -174,16 +174,71 @@ func TestIndexListsEveryExampleWithBothSources(t *testing.T) {
 	}
 }
 
+func TestServesUnderANonRootBase(t *testing.T) {
+	v := testVite(t, "/repo/")
+	_, m := loadMap(t)
+	h, err := newHandler(v, m, "/repo/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv := httptest.NewServer(v.Middleware(h))
+	t.Cleanup(srv.Close)
+
+	status, body := get(t, srv, "/repo/")
+	if status != 200 {
+		t.Fatalf("GET /repo/: status %d", status)
+	}
+	if !strings.Contains(body, `src="/repo/frame/hxlive/counter/"`) {
+		t.Error("/repo/ page lacks the base-prefixed iframe src")
+	}
+	if !strings.Contains(body, "/repo/static/assets/main.js") {
+		t.Error("/repo/ page lacks the base-prefixed asset URL")
+	}
+
+	if status, _ := get(t, srv, "/repo/frame/alpine/counter/"); status != 200 {
+		t.Errorf("GET /repo/frame/alpine/counter/: status %d", status)
+	}
+
+	for _, p := range []string{"/", "/frame/alpine/counter/"} {
+		if status, _ := get(t, srv, p); status != 404 {
+			t.Errorf("GET %s: status %d, want 404", p, status)
+		}
+	}
+
+	// The stub manifest has no backing file body for the asset, so we can't
+	// assert 200 here; instead confirm the request reached StaticHandler (a
+	// file server) rather than the page mux, by checking it didn't answer
+	// with an HTML page.
+	res, err := http.Get(srv.URL + "/repo/static/assets/main.js")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	if ct := res.Header.Get("Content-Type"); strings.HasPrefix(ct, "text/html") {
+		t.Errorf("/repo/static/assets/main.js: content type %q looks like the page mux answered", ct)
+	}
+}
+
 func TestExportWritesTheSiteUnderABase(t *testing.T) {
 	v := testVite(t, "/repo/")
 	exs, m := loadMap(t)
 	dir := t.TempDir()
-	if err := export(context.Background(), v, m, "/repo/", dir); err != nil {
+	bundle := fstest.MapFS{
+		"assets/main.js":      {Data: []byte("//js")},
+		".vite/manifest.json": {Data: []byte("{}")},
+		".gitkeep":            {},
+	}
+	if err := export(context.Background(), v, m, "/repo/", dir, bundle); err != nil {
 		t.Fatal(err)
 	}
-	for _, rel := range []string{"index.html", ".nojekyll", "frame/alpine/counter/index.html", "frame/hxlive/counter/index.html", "frame/alpine/teleport/index.html"} {
+	for _, rel := range []string{"index.html", ".nojekyll", "frame/alpine/counter/index.html", "frame/hxlive/counter/index.html", "frame/alpine/teleport/index.html", "static/assets/main.js"} {
 		if _, err := os.Stat(filepath.Join(dir, filepath.FromSlash(rel))); err != nil {
 			t.Errorf("missing %s: %v", rel, err)
+		}
+	}
+	for _, rel := range []string{"static/.vite", "static/.gitkeep"} {
+		if _, err := os.Stat(filepath.Join(dir, filepath.FromSlash(rel))); err == nil {
+			t.Errorf("%s should have been skipped from the bundle copy", rel)
 		}
 	}
 	if _, err := os.Stat(filepath.Join(dir, "frame", "hxlive", "teleport")); err == nil {

@@ -4,7 +4,7 @@ A gsx site whose pages are pure functions of build-time data can be served by
 `net/http` in development and written to disk for static hosting, from one
 list of pages. The pattern below is the `site` package from
 [jackielii/hx-live-vs-alpine](https://github.com/jackielii/hx-live-vs-alpine):
-a `Map` of paths to nodes that becomes an `http.Handler` for local development
+a `Pages` list of paths to nodes that becomes an `http.Handler` for local development
 and a directory tree for a static host, with one base-path helper that keeps
 internal links correct in both places.
 
@@ -14,8 +14,9 @@ Copy this into the package that owns the page list:
 
 ```go
 // Package site turns a list of pages into both an HTTP handler and a static
-// export. A site is a Map of paths to gsx nodes; Handler serves it, Export
-// writes it to disk as directory indexes. The same nodes render either way.
+// export. A site is a Pages list of paths to gsx nodes; Handler serves it,
+// Export writes it to disk as directory indexes. The same nodes render
+// either way.
 //
 // Base-path plumbing lets one build serve from "/" locally and from
 // "/<repo>/" on a project site: put the base in the context (Middleware or
@@ -23,6 +24,7 @@ Copy this into the package that owns the page list:
 package site
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -41,10 +43,14 @@ type Page struct {
 	Node gsx.Node
 }
 
-// Map is the whole site in render order.
-type Map []Page
+// Pages is the whole site in render order: a list, not a Go map. Handler
+// renders each node concurrently across requests, and Export renders every
+// node once per Export call while Handler may render the same node again at
+// any time, so every node must be safe for concurrent, repeated Render
+// calls.
+type Pages []Page
 
-func (m Map) validate() error {
+func (m Pages) validate() error {
 	seen := map[string]bool{}
 	for _, p := range m {
 		switch {
@@ -54,6 +60,8 @@ func (m Map) validate() error {
 			return fmt.Errorf("site: path %q must not contain ..", p.Path)
 		case strings.Contains(p.Path, "//"):
 			return fmt.Errorf("site: path %q must not contain //", p.Path)
+		case strings.ContainsAny(p.Path, "{}"):
+			return fmt.Errorf("site: path %q must not contain { or }", p.Path)
 		case p.Node == nil:
 			return fmt.Errorf("site: path %q has no node", p.Path)
 		case seen[p.Path]:
@@ -66,8 +74,10 @@ func (m Map) validate() error {
 
 // Handler serves every page at exactly its path with GET. A request for a
 // page's path without its trailing slash is redirected to the slash form by
-// the mux; any other path is a 404.
-func (m Map) Handler() (http.Handler, error) {
+// the mux; any other path is a 404. Each page renders into a buffer first,
+// so a render error produces a real 500 instead of a truncated 200 with a
+// partial body already sent.
+func (m Pages) Handler() (http.Handler, error) {
 	if err := m.validate(); err != nil {
 		return nil, err
 	}
@@ -75,10 +85,13 @@ func (m Map) Handler() (http.Handler, error) {
 	for _, p := range m {
 		node := p.Node
 		mux.HandleFunc("GET "+p.Path+"{$}", func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			if err := node.Render(r.Context(), w); err != nil {
+			var buf bytes.Buffer
+			if err := node.Render(r.Context(), &buf); err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
 			}
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.Write(buf.Bytes())
 		})
 	}
 	return mux, nil
@@ -87,7 +100,9 @@ func (m Map) Handler() (http.Handler, error) {
 // Export renders every page to dir/<path>/index.html. ctx must already carry
 // whatever the nodes read (asset resolution, the base path); Export adds
 // nothing. Existing files are overwritten; unrelated files are left alone.
-func (m Map) Export(ctx context.Context, dir string) error {
+// An empty list writes nothing, so dir is never created. A render error
+// aborts the export mid-way, leaving the pages written so far in place.
+func (m Pages) Export(ctx context.Context, dir string) error {
 	if err := m.validate(); err != nil {
 		return err
 	}
@@ -139,9 +154,9 @@ func Base(ctx context.Context) string {
 	return "/"
 }
 
-// URL prefixes an absolute site path with the base path.
+// URL prefixes path with the base path. path need not have a leading slash.
 func URL(ctx context.Context, path string) string {
-	return strings.TrimSuffix(Base(ctx), "/") + path
+	return strings.TrimSuffix(Base(ctx), "/") + "/" + strings.TrimPrefix(path, "/")
 }
 
 // Middleware puts base into every request's context.
@@ -153,7 +168,9 @@ func Middleware(base string, next http.Handler) http.Handler {
 }
 
 // CopyFS copies fsys into dir, creating directories as needed and skipping
-// any entry (and its subtree) for which skip returns true.
+// any entry (and its subtree) for which skip returns true. Existing files
+// are overwritten, and unlike os.CopyFS it does not preserve file modes:
+// everything is written with the process's default permissions.
 func CopyFS(dir string, fsys fs.FS, skip func(path string) bool) error {
 	return fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -196,8 +213,8 @@ List every page once, in application code:
 
 ```go
 // buildMap lists every page of the site: the index and one frame per demo.
-func buildMap(exs []examples.Example, feats []examples.FeatureRow) site.Map {
-	m := site.Map{{Path: "/", Node: pages.Index(exs, feats)}}
+func buildMap(exs []examples.Example, feats []examples.FeatureRow) site.Pages {
+	m := site.Pages{{Path: "/", Node: pages.Index(exs, feats)}}
 	for _, ex := range exs {
 		m = append(m, site.Page{Path: pages.FramePath(examples.Alpine, ex.Slug), Node: pages.Frame(examples.Alpine, ex)})
 		if ex.HasDemo() {
@@ -219,23 +236,29 @@ func FramePath(lib examples.Lib, slug string) string {
 }
 ```
 
-The same `Map` serves and exports. `newHandler` wraps it for `net/http`:
+The same `Pages` list serves and exports. `newHandler` wraps it for `net/http`:
 
 ```go
-// newHandler serves the site map plus the bundle and a health check.
-func newHandler(v *vite.Vite, m site.Map, base string) (http.Handler, error) {
+// newHandler serves the site map plus the bundle and a health check, all
+// mounted under base.
+func newHandler(v *vite.Vite, m site.Pages, base string) (http.Handler, error) {
 	pagesHandler, err := m.Handler()
 	if err != nil {
 		return nil, err
 	}
+	base = site.URL(site.NewContext(context.Background(), base), "/") // normalised, ends with /
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 	if !v.Dev() {
-		mux.Handle("/static/", v.StaticHandler())
+		mux.Handle(staticURL(base), v.StaticHandler())
 	}
-	mux.Handle("/", pagesHandler)
+	if base == "/" {
+		mux.Handle("/", pagesHandler)
+	} else {
+		mux.Handle(base, http.StripPrefix(strings.TrimSuffix(base, "/"), pagesHandler))
+	}
 	return site.Middleware(base, mux), nil
 }
 ```
@@ -243,29 +266,25 @@ func newHandler(v *vite.Vite, m site.Map, base string) (http.Handler, error) {
 `export` renders it to disk instead, alongside the built bundle:
 
 ```go
-// export writes the site and the bundle to dir for static hosting under base.
-func export(ctx context.Context, v *vite.Vite, m site.Map, base, dir string) error {
+// export writes the site and the bundle to dir for static hosting under
+// base. bundle is the root of the built Vite output (the dist directory).
+func export(ctx context.Context, v *vite.Vite, m site.Pages, base, dir string, bundle fs.FS) error {
 	ctx = site.NewContext(vite.NewContext(ctx, v), base)
 	if err := m.Export(ctx, dir); err != nil {
-		return err
-	}
-	dist, err := fs.Sub(distFS, "dist")
-	if err != nil {
 		return err
 	}
 	skip := func(p string) bool {
 		return p == ".vite" || strings.HasPrefix(p, ".vite/") || p == ".gitkeep"
 	}
-	if err := site.CopyFS(filepath.Join(dir, "static"), dist, skip); err != nil {
+	if err := site.CopyFS(filepath.Join(dir, "static"), bundle, skip); err != nil {
 		return fmt.Errorf("copy bundle: %w", err)
 	}
 	return os.WriteFile(filepath.Join(dir, ".nojekyll"), nil, 0o644)
 }
 ```
 
-A live server started with a non-root `-base` still mounts `/static/` and
-every page path at the mux root, so it expects a reverse proxy in front of it
-to strip the base prefix before the request reaches Go.
+Serving with a non-root `-base` mounts the bundle and the pages under that
+prefix, so the live server and the export answer the same URLs.
 
 ## Link with the base path
 
@@ -320,11 +339,14 @@ func staticURL(base string) string {
 ```
 
 This is not automatic today: the `gsx init` template ships `base: "/"` in
-`vite.config.ts` alongside `StaticURL "/static/"` in the Go config, which only
-agree when the site is mounted at `/`. A project generated from that template
-and deployed under a non-root base — a GitHub Pages project site, for
-instance — will find its fonts 404 in production until both sides derive
-their prefix from the same source, as here.
+`vite.config.ts` alongside `StaticURL "/static/"` in the Go config, and the
+two never agree. The built CSS references `url(/assets/font.woff2)` (from
+`base: "/"`), while the bundle is served at `/static/assets/` (from
+`StaticURL "/static/"`) — so CSS-referenced assets (fonts, images) 404 in
+production at any base, root included. The fix is to derive both from one
+setting, `SITE_BASE`, as here: that gives `/static/` at the root and
+`/<repo>/static/` on a project site, matching whatever `-base` the Go side
+was started with.
 
 ## Publish
 
@@ -348,12 +370,10 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -370,7 +390,8 @@ jobs:
       - run: npm ci
       - run: npm run export
         env:
-          SITE_BASE: /hx-live-vs-alpine/
+          # Project sites live under /<repo>/; a user/org site or custom domain would use /
+          SITE_BASE: /${{ github.event.repository.name }}/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -379,6 +400,9 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -403,5 +427,5 @@ The `site` package has no dependency on this repo's pages, examples, or
 templates — it only knows about `gsx.Node` and a list of paths, so it can move
 into gsx itself as-is. From there, content collections (a directory of
 Markdown or data files turned into pages) and a `gsx build` command that walks
-a `site.Map` and calls `Export` would turn this pattern into a small built-in
+a `site.Pages` list and calls `Export` would turn this pattern into a small built-in
 static-site generator, rather than something every project copies in by hand.

@@ -2,6 +2,8 @@ package site
 
 import (
 	"context"
+	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -23,6 +25,7 @@ func TestURLJoinsBaseAndPath(t *testing.T) {
 		{"/repo", "/frame/a/", "/repo/frame/a/"},
 		{"repo", "/", "/repo/"},
 		{"", "/x/", "/x/"},
+		{"/repo/", "x/", "/repo/x/"},
 	}
 	for _, c := range cases {
 		ctx := NewContext(context.Background(), c.base)
@@ -36,7 +39,7 @@ func TestURLJoinsBaseAndPath(t *testing.T) {
 }
 
 func TestHandlerServesExactPathsOnly(t *testing.T) {
-	m := Map{page("/", "<h1>home</h1>"), page("/a/b/", "<p>ab</p>")}
+	m := Pages{page("/", "<h1>home</h1>"), page("/a/b/", "<p>ab</p>")}
 	h, err := m.Handler()
 	if err != nil {
 		t.Fatal(err)
@@ -60,8 +63,33 @@ func TestHandlerServesExactPathsOnly(t *testing.T) {
 	res.Body.Close()
 }
 
+type failing struct{}
+
+func (failing) Render(context.Context, io.Writer) error { return errors.New("boom") }
+
+func TestHandlerRenderErrorIsA500NotAPartialPage(t *testing.T) {
+	h, err := Pages{{Path: "/", Node: failing{}}}.Handler()
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv := httptest.NewServer(h)
+	defer srv.Close()
+	res, err := http.Get(srv.URL + "/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	body, _ := io.ReadAll(res.Body)
+	if res.StatusCode != http.StatusInternalServerError {
+		t.Errorf("status %d, want 500", res.StatusCode)
+	}
+	if strings.Contains(string(body), "<h1>") {
+		t.Errorf("body contains a partial page: %q", body)
+	}
+}
+
 func TestHandlerRedirectsSlashlessPagePath(t *testing.T) {
-	h, err := Map{page("/a/b/", "<p>ab</p>")}.Handler()
+	h, err := Pages{page("/a/b/", "<p>ab</p>")}.Handler()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,12 +110,13 @@ func TestHandlerRedirectsSlashlessPagePath(t *testing.T) {
 }
 
 func TestMapValidation(t *testing.T) {
-	bad := []Map{
+	bad := []Pages{
 		{page("a/", "x")},
 		{page("/a", "x")},
 		{page("/../a/", "x")},
 		{page("/a/", "x"), page("/a/", "y")},
 		{{Path: "/a/", Node: nil}},
+		{page("/a/{x}/", "x")},
 	}
 	for i, m := range bad {
 		if _, err := m.Handler(); err == nil {
@@ -101,7 +130,7 @@ func TestMapValidation(t *testing.T) {
 
 func TestExportWritesDirectoryIndexes(t *testing.T) {
 	dir := t.TempDir()
-	m := Map{page("/", "<h1>home</h1>"), page("/a/b/", "<p>ab</p>")}
+	m := Pages{page("/", "<h1>home</h1>"), page("/a/b/", "<p>ab</p>")}
 	if err := m.Export(context.Background(), dir); err != nil {
 		t.Fatal(err)
 	}

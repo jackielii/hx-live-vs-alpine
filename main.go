@@ -33,8 +33,8 @@ func staticURL(base string) string {
 }
 
 // buildMap lists every page of the site: the index and one frame per demo.
-func buildMap(exs []examples.Example, feats []examples.FeatureRow) site.Map {
-	m := site.Map{{Path: "/", Node: pages.Index(exs, feats)}}
+func buildMap(exs []examples.Example, feats []examples.FeatureRow) site.Pages {
+	m := site.Pages{{Path: "/", Node: pages.Index(exs, feats)}}
 	for _, ex := range exs {
 		m = append(m, site.Page{Path: pages.FramePath(examples.Alpine, ex.Slug), Node: pages.Frame(examples.Alpine, ex)})
 		if ex.HasDemo() {
@@ -44,44 +44,47 @@ func buildMap(exs []examples.Example, feats []examples.FeatureRow) site.Map {
 	return m
 }
 
-// newHandler serves the site map plus the bundle and a health check.
-func newHandler(v *vite.Vite, m site.Map, base string) (http.Handler, error) {
+// newHandler serves the site map plus the bundle and a health check, all
+// mounted under base.
+func newHandler(v *vite.Vite, m site.Pages, base string) (http.Handler, error) {
 	pagesHandler, err := m.Handler()
 	if err != nil {
 		return nil, err
 	}
+	base = site.URL(site.NewContext(context.Background(), base), "/") // normalised, ends with /
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 	if !v.Dev() {
-		mux.Handle("/static/", v.StaticHandler())
+		mux.Handle(staticURL(base), v.StaticHandler())
 	}
-	mux.Handle("/", pagesHandler)
+	if base == "/" {
+		mux.Handle("/", pagesHandler)
+	} else {
+		mux.Handle(base, http.StripPrefix(strings.TrimSuffix(base, "/"), pagesHandler))
+	}
 	return site.Middleware(base, mux), nil
 }
 
-// export writes the site and the bundle to dir for static hosting under base.
-func export(ctx context.Context, v *vite.Vite, m site.Map, base, dir string) error {
+// export writes the site and the bundle to dir for static hosting under
+// base. bundle is the root of the built Vite output (the dist directory).
+func export(ctx context.Context, v *vite.Vite, m site.Pages, base, dir string, bundle fs.FS) error {
 	ctx = site.NewContext(vite.NewContext(ctx, v), base)
 	if err := m.Export(ctx, dir); err != nil {
-		return err
-	}
-	dist, err := fs.Sub(distFS, "dist")
-	if err != nil {
 		return err
 	}
 	skip := func(p string) bool {
 		return p == ".vite" || strings.HasPrefix(p, ".vite/") || p == ".gitkeep"
 	}
-	if err := site.CopyFS(filepath.Join(dir, "static"), dist, skip); err != nil {
+	if err := site.CopyFS(filepath.Join(dir, "static"), bundle, skip); err != nil {
 		return fmt.Errorf("copy bundle: %w", err)
 	}
 	return os.WriteFile(filepath.Join(dir, ".nojekyll"), nil, 0o644)
 }
 
 func main() {
-	base := flag.String("base", "/", "path the site is mounted under, e.g. /hx-live-vs-alpine/")
+	base := flag.String("base", "/", "path the site is mounted under, e.g. /hx-live-vs-alpine/ (applies to serving and export)")
 	exportDir := flag.String("export", "", "write the site as static files to this directory and exit")
 	flag.Parse()
 
@@ -104,7 +107,11 @@ func main() {
 		if v.Dev() {
 			log.Fatal("export needs a production bundle: unset VITE_DEV_URL and run `npm run build` first")
 		}
-		if err := export(context.Background(), v, m, *base, *exportDir); err != nil {
+		bundle, err := fs.Sub(distFS, "dist")
+		if err != nil {
+			log.Fatal(err)
+		}
+		if err := export(context.Background(), v, m, *base, *exportDir, bundle); err != nil {
 			log.Fatal(err)
 		}
 		log.Printf("exported %d pages to %s (base %s)", len(m), *exportDir, *base)

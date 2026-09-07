@@ -1,6 +1,7 @@
 // Package site turns a list of pages into both an HTTP handler and a static
-// export. A site is a Map of paths to gsx nodes; Handler serves it, Export
-// writes it to disk as directory indexes. The same nodes render either way.
+// export. A site is a Pages list of paths to gsx nodes; Handler serves it,
+// Export writes it to disk as directory indexes. The same nodes render
+// either way.
 //
 // Base-path plumbing lets one build serve from "/" locally and from
 // "/<repo>/" on a project site: put the base in the context (Middleware or
@@ -8,6 +9,7 @@
 package site
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -26,10 +28,14 @@ type Page struct {
 	Node gsx.Node
 }
 
-// Map is the whole site in render order.
-type Map []Page
+// Pages is the whole site in render order: a list, not a Go map. Handler
+// renders each node concurrently across requests, and Export renders every
+// node once per Export call while Handler may render the same node again at
+// any time, so every node must be safe for concurrent, repeated Render
+// calls.
+type Pages []Page
 
-func (m Map) validate() error {
+func (m Pages) validate() error {
 	seen := map[string]bool{}
 	for _, p := range m {
 		switch {
@@ -39,6 +45,8 @@ func (m Map) validate() error {
 			return fmt.Errorf("site: path %q must not contain ..", p.Path)
 		case strings.Contains(p.Path, "//"):
 			return fmt.Errorf("site: path %q must not contain //", p.Path)
+		case strings.ContainsAny(p.Path, "{}"):
+			return fmt.Errorf("site: path %q must not contain { or }", p.Path)
 		case p.Node == nil:
 			return fmt.Errorf("site: path %q has no node", p.Path)
 		case seen[p.Path]:
@@ -51,8 +59,10 @@ func (m Map) validate() error {
 
 // Handler serves every page at exactly its path with GET. A request for a
 // page's path without its trailing slash is redirected to the slash form by
-// the mux; any other path is a 404.
-func (m Map) Handler() (http.Handler, error) {
+// the mux; any other path is a 404. Each page renders into a buffer first,
+// so a render error produces a real 500 instead of a truncated 200 with a
+// partial body already sent.
+func (m Pages) Handler() (http.Handler, error) {
 	if err := m.validate(); err != nil {
 		return nil, err
 	}
@@ -60,10 +70,13 @@ func (m Map) Handler() (http.Handler, error) {
 	for _, p := range m {
 		node := p.Node
 		mux.HandleFunc("GET "+p.Path+"{$}", func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			if err := node.Render(r.Context(), w); err != nil {
+			var buf bytes.Buffer
+			if err := node.Render(r.Context(), &buf); err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
 			}
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.Write(buf.Bytes())
 		})
 	}
 	return mux, nil
@@ -72,7 +85,9 @@ func (m Map) Handler() (http.Handler, error) {
 // Export renders every page to dir/<path>/index.html. ctx must already carry
 // whatever the nodes read (asset resolution, the base path); Export adds
 // nothing. Existing files are overwritten; unrelated files are left alone.
-func (m Map) Export(ctx context.Context, dir string) error {
+// An empty list writes nothing, so dir is never created. A render error
+// aborts the export mid-way, leaving the pages written so far in place.
+func (m Pages) Export(ctx context.Context, dir string) error {
 	if err := m.validate(); err != nil {
 		return err
 	}
@@ -124,9 +139,9 @@ func Base(ctx context.Context) string {
 	return "/"
 }
 
-// URL prefixes an absolute site path with the base path.
+// URL prefixes path with the base path. path need not have a leading slash.
 func URL(ctx context.Context, path string) string {
-	return strings.TrimSuffix(Base(ctx), "/") + path
+	return strings.TrimSuffix(Base(ctx), "/") + "/" + strings.TrimPrefix(path, "/")
 }
 
 // Middleware puts base into every request's context.
@@ -138,7 +153,9 @@ func Middleware(base string, next http.Handler) http.Handler {
 }
 
 // CopyFS copies fsys into dir, creating directories as needed and skipping
-// any entry (and its subtree) for which skip returns true.
+// any entry (and its subtree) for which skip returns true. Existing files
+// are overwritten, and unlike os.CopyFS it does not preserve file modes:
+// everything is written with the process's default permissions.
 func CopyFS(dir string, fsys fs.FS, skip func(path string) bool) error {
 	return fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
 		if err != nil {

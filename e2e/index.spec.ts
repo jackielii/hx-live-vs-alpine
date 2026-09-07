@@ -21,9 +21,10 @@ test("index sizes every demo frame to its content", async ({ page }) => {
   // under the current base (this is what a wrong Vite `base` breaks).
   const css = await page.locator('link[rel="stylesheet"]').first().getAttribute("href");
   expect(css).toBeTruthy();
-  const cssBody = await (await page.request.get(new URL(css!, page.url()).toString())).text();
+  const cssURL = new URL(css!, page.url()).toString();
+  const cssBody = await (await page.request.get(cssURL)).text();
   const font = cssBody.match(/url\(([^)]+\.woff2)\)/);
   expect(font, "stylesheet references a font").toBeTruthy();
-  const fontRes = await page.request.get(new URL(font![1], page.url()).toString());
+  const fontRes = await page.request.get(new URL(font![1], cssURL).toString());
   expect(fontRes.status(), font![1]).toBe(200);
 });
