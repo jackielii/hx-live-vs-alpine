@@ -60,6 +60,27 @@ func TestHandlerServesExactPathsOnly(t *testing.T) {
 	res.Body.Close()
 }
 
+func TestHandlerRedirectsSlashlessPagePath(t *testing.T) {
+	h, err := Map{page("/a/b/", "<p>ab</p>")}.Handler()
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv := httptest.NewServer(h)
+	defer srv.Close()
+	client := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	res, err := client.Get(srv.URL + "/a/b")
+	if err != nil {
+		t.Fatal(err)
+	}
+	res.Body.Close()
+	if res.StatusCode < 300 || res.StatusCode > 308 {
+		t.Fatalf("status %d, want a redirect", res.StatusCode)
+	}
+	if loc := res.Header.Get("Location"); loc != "/a/b/" {
+		t.Errorf("Location %q, want /a/b/", loc)
+	}
+}
+
 func TestMapValidation(t *testing.T) {
 	bad := []Map{
 		{page("a/", "x")},

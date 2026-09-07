@@ -37,6 +37,8 @@ func (m Map) validate() error {
 			return fmt.Errorf("site: path %q must start and end with /", p.Path)
 		case strings.Contains(p.Path, ".."):
 			return fmt.Errorf("site: path %q must not contain ..", p.Path)
+		case strings.Contains(p.Path, "//"):
+			return fmt.Errorf("site: path %q must not contain //", p.Path)
 		case p.Node == nil:
 			return fmt.Errorf("site: path %q has no node", p.Path)
 		case seen[p.Path]:
@@ -47,8 +49,9 @@ func (m Map) validate() error {
 	return nil
 }
 
-// Handler serves every page at exactly its path with GET. Anything else is a
-// 404 from the mux.
+// Handler serves every page at exactly its path with GET. A request for a
+// page's path without its trailing slash is redirected to the slash form by
+// the mux; any other path is a 404.
 func (m Map) Handler() (http.Handler, error) {
 	if err := m.validate(); err != nil {
 		return nil, err
@@ -74,7 +77,7 @@ func (m Map) Export(ctx context.Context, dir string) error {
 		return err
 	}
 	if info, err := os.Stat(dir); err == nil && !info.IsDir() {
-		return fmt.Errorf("site: %s is not a directory", dir)
+		return fmt.Errorf("site: %q is not a directory", dir)
 	}
 	for _, p := range m {
 		target := filepath.Join(dir, filepath.FromSlash(strings.TrimPrefix(p.Path, "/")), "index.html")
