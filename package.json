@@ -5,8 +5,11 @@
   "scripts": {
     "dev": "go tool gsx dev",
     "build": "vite build && touch dist/.gitkeep",
+    "export": "npm run build && go tool gsx generate && go run . -export out -base ${SITE_BASE:-/}",
     "e2e:serve": "npm run build && go tool gsx generate && GO_PORT=8899 go run .",
-    "e2e": "playwright test -c e2e"
+    "e2e": "playwright test -c e2e",
+    "e2e:static:serve": "SITE_BASE=/hx-live-vs-alpine/ npm run export && go run ./cmd/servestatic -dir out -base /hx-live-vs-alpine/ -port 8898",
+    "e2e:static": "playwright test -c e2e/static.config.ts"
   },
   "devDependencies": {
     "@gsxhq/vite-plugin-gsx": "^0.10.0",

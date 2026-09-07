@@ -4,6 +4,10 @@ import { gsx, devFallback } from "@gsxhq/vite-plugin-gsx";
 
 export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
+  // The Go side serves the bundle at <base>static/ (vite.StaticURL). Vite must
+  // write the same prefix into CSS url() references, so both read SITE_BASE.
+  const siteBase = "/" + (process.env.SITE_BASE || "/").replace(/^\/+|\/+$/g, "");
+  const assetBase = (siteBase === "/" ? "/" : siteBase + "/") + "static/";
   const goPort = env.GO_PORT || "7777";
   const vitePort = parseInt(env.VITE_PORT || "5173", 10);
   // Single-computed upstream: `gsx dev` injects GSX_DEV_UPSTREAM into the real
@@ -30,9 +34,9 @@ export default defineConfig(({ command, mode }) => {
   return {
     clearScreen: false,
     // Dev serves all Vite assets under /__vite/ (matches gsxhq/vite DevBase);
-    // prod uses the default base ("/") since hashed assets are served from
-    // /static via gsxhq/vite.
-    base: command === "serve" ? "/__vite/" : "/",
+    // prod uses assetBase so hashed assets and their CSS url() references
+    // resolve under <SITE_BASE>static/, matching vite.StaticURL on the Go side.
+    base: command === "serve" ? "/__vite/" : assetBase,
     publicDir: false,
     customLogger: logger,
     plugins: [
