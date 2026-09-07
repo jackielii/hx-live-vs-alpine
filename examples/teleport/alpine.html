@@ -1,0 +1,11 @@
+<div x-data="{ open: false }">
+    <button @click="open = ! open">Toggle Modal</button>
+
+    <template x-teleport="body">
+        <div x-show="open">
+            Modal contents...
+        </div>
+    </template>
+</div>
+
+<div>Some other content placed AFTER the modal markup.</div>

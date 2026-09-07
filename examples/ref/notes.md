@@ -1,0 +1,1 @@
+Alpine keeps a per-component registry of `x-ref` names behind `$refs`. hx-live has no registry; an id, or a directional query such as `q('next span')`, reaches the same element. Method calls pass through the `q()` proxy.

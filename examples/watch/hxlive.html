@@ -1,0 +1,4 @@
+<div data-open="false" data-log="" hx-live="data.log = 'open is now ' + data.open">
+    <button hx-on:click="data.open = !data.open">Toggle Open</button>
+    <span :text="data.log"></span>
+</div>

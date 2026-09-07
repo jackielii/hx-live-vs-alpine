@@ -1,0 +1,1 @@
+The docs example inside an `x-data` wrapper, which the docs page provides implicitly. `x-id` and `$id` generate unique ids on the client so repeated components can pair labels with inputs. hx-live does not generate ids because the markup is already unique when it arrives: the template that renders two copies of a component is the natural place to number them.

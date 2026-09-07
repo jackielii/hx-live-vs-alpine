@@ -1,0 +1,3 @@
+Alpine removes `x-cloak` when it initialises an element, so a `[x-cloak] { display: none }` rule hides markup until then. hx-live has no cloak directive, but any attribute can be cleared once the element is processed: `hx-on:load="attr['hx-cloak'] = null"` drops the marker (only `null` removes a plain attribute; `false` would be written as the string "false"), and the same CSS rule hides the element until then.
+
+A declarative `:hx-cloak="null"` binding on the same element looks tidier but does not work in hx-live 4.0.0: it walks an element's attributes in DOM order while applying bindings, and removing `hx-cloak` mid-walk shifts the list so the sibling `:hidden` binding is skipped. An event handler runs in its own pass and avoids that.

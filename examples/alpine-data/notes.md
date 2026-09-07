@@ -1,0 +1,1 @@
+`Alpine.data` registers a component definition that many elements can instantiate. hx-live has no component model on the client: reuse happens where the markup is produced. With a server-rendered stack the reusable unit becomes a template component that emits the `data-*` attribute and the bindings; the browser only ever sees the expanded result.

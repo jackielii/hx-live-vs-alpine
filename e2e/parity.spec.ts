@@ -97,5 +97,155 @@ for (const lib of libs) {
       await expect(bold).not.toHaveClass(/\bon\b/);
       expect(errors).toEqual([]);
     });
+
+    test("bind sets the placeholder", async ({ page }) => {
+      const errors = collectErrors(page);
+      await page.goto(`/frame/${lib}/bind`);
+      await expect(page.locator("input")).toHaveAttribute("placeholder", "Type here...");
+      expect(errors).toEqual([]);
+    });
+
+    test("on reacts to the Enter key only", async ({ page }) => {
+      const errors = collectErrors(page);
+      await page.goto(`/frame/${lib}/on`);
+      const input = page.locator("input");
+      await input.pressSequentially("abc");
+      await expect(page.locator("span")).toHaveText("");
+      await input.press("Enter");
+      await expect(page.locator("span")).toHaveText("Enter pressed");
+      expect(errors).toEqual([]);
+    });
+
+    test("init runs once at load", async ({ page }) => {
+      const errors = collectErrors(page);
+      await page.goto(`/frame/${lib}/init`);
+      await expect(page.locator("span")).toHaveText("Initialised!");
+      expect(errors).toEqual([]);
+    });
+
+    test("html renders markup", async ({ page }) => {
+      const errors = collectErrors(page);
+      await page.goto(`/frame/${lib}/html`);
+      await expect(page.locator("span strong")).toHaveText("calebporzio");
+      expect(errors).toEqual([]);
+    });
+
+    test("effect derives a value", async ({ page }) => {
+      const errors = collectErrors(page);
+      await page.goto(`/frame/${lib}/effect`);
+      await expect(page.locator("span")).toHaveText("5");
+      await page.getByRole("button", { name: "Change Message" }).click();
+      await expect(page.locator("span")).toHaveText("12");
+      expect(errors).toEqual([]);
+    });
+
+    test("ignore leaves the subtree alone", async ({ page }) => {
+      const errors = collectErrors(page);
+      await page.goto(`/frame/${lib}/ignore`);
+      const spans = page.locator("span");
+      await expect(spans.nth(0)).toHaveText("processed");
+      await expect(spans.nth(1)).toHaveText("untouched");
+      expect(errors).toEqual([]);
+    });
+
+    test("ref removes the referenced element", async ({ page }) => {
+      const errors = collectErrors(page);
+      await page.goto(`/frame/${lib}/ref`);
+      await expect(page.getByText("Hello")).toBeVisible();
+      await page.getByRole("button", { name: "Remove Text" }).click();
+      await expect(page.getByText("Hello")).toHaveCount(0);
+      expect(errors).toEqual([]);
+    });
+
+    test("model mirrors the input", async ({ page }) => {
+      const errors = collectErrors(page);
+      await page.goto(`/frame/${lib}/model`);
+      await page.locator("input").fill("hi");
+      await expect(page.locator("span")).toHaveText("hi");
+      expect(errors).toEqual([]);
+    });
+
+    test("for appends to the list", async ({ page }) => {
+      const errors = collectErrors(page);
+      await page.goto(`/frame/${lib}/for`);
+      await expect(page.locator("li")).toHaveText(["Red", "Orange", "Yellow"]);
+      await page.getByRole("button", { name: "Add Green" }).click();
+      await expect(page.locator("li")).toHaveText(["Red", "Orange", "Yellow", "Green"]);
+      expect(errors).toEqual([]);
+    });
+
+    test("if toggles the contents", async ({ page }) => {
+      const errors = collectErrors(page);
+      await page.goto(`/frame/${lib}/if`);
+      await expect(page.getByText("Contents...")).toBeHidden();
+      await page.getByRole("button", { name: "Toggle" }).click();
+      await expect(page.getByText("Contents...")).toBeVisible();
+      await page.getByRole("button", { name: "Toggle" }).click();
+      await expect(page.getByText("Contents...")).toBeHidden();
+      expect(errors).toEqual([]);
+    });
+
+    test("cloak hides the element and removes its marker", async ({ page }) => {
+      const errors = collectErrors(page);
+      await page.goto(`/frame/${lib}/cloak`);
+      await expect(page.getByText("This will not")).toBeHidden();
+      await expect(page.locator("[x-cloak], [hx-cloak]")).toHaveCount(0);
+      expect(errors).toEqual([]);
+    });
+
+    test("el is the current element", async ({ page }) => {
+      const errors = collectErrors(page);
+      await page.goto(`/frame/${lib}/el`);
+      await page.getByRole("button").click();
+      await expect(page.getByRole("button")).toHaveText("Hello World!");
+      expect(errors).toEqual([]);
+    });
+
+    test("dispatch reaches an ancestor listener", async ({ page }) => {
+      const errors = collectErrors(page);
+      await page.goto(`/frame/${lib}/dispatch`);
+      await page.getByRole("button", { name: "Notify" }).click();
+      await expect(page.locator("span")).toHaveText("Notified!");
+      expect(errors).toEqual([]);
+    });
+
+    test("root reads the component root", async ({ page }) => {
+      const errors = collectErrors(page);
+      await page.goto(`/frame/${lib}/root`);
+      await page.getByRole("button", { name: "Say Hi" }).click();
+      await expect(page.getByRole("button")).toHaveText("Hello World!");
+      expect(errors).toEqual([]);
+    });
+
+    test("nexttick reads after the re-render", async ({ page }) => {
+      const errors = collectErrors(page);
+      await page.goto(`/frame/${lib}/nexttick`);
+      await page.getByRole("button").click();
+      await expect(page.getByRole("button")).toHaveText("Hello World!");
+      await expect(page.locator("span")).toHaveText("Hello World!");
+      expect(errors).toEqual([]);
+    });
+
+    test("store is shared across components", async ({ page }) => {
+      const errors = collectErrors(page);
+      await page.goto(`/frame/${lib}/store`);
+      const content = page.getByText("Content");
+      await expect(content).not.toHaveClass(/\bdark\b/);
+      await page.getByRole("button", { name: "Toggle Dark Mode" }).click();
+      await expect(content).toHaveClass(/\bdark\b/);
+      await page.getByRole("button", { name: "Toggle Dark Mode" }).click();
+      await expect(content).not.toHaveClass(/\bdark\b/);
+      expect(errors).toEqual([]);
+    });
+
+    test("watch reports the new value", async ({ page }) => {
+      const errors = collectErrors(page);
+      await page.goto(`/frame/${lib}/watch`);
+      await page.getByRole("button", { name: "Toggle Open" }).click();
+      await expect(page.locator("span")).toHaveText("open is now true");
+      await page.getByRole("button", { name: "Toggle Open" }).click();
+      await expect(page.locator("span")).toHaveText("open is now false");
+      expect(errors).toEqual([]);
+    });
   });
 }

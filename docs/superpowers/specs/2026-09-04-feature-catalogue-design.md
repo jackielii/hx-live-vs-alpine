@@ -64,7 +64,7 @@ is present exactly once.
 
 ## Card order and content
 
-Cards appear in this order. Alpine fragments are the docs' first example for
+Cards appear in this order. The implementation places the three original directive cards (counter, dropdown, classbind) first, then the new directive cards in docs order, with the scenario cards search, tabs and transition slotted after the features they relate to; the matrix, not the card order, is the canonical listing. Alpine fragments are the docs' first example for
 that feature, verbatim, with one systematic adaptation: where the docs use
 `alert()` or `console.log()`, the side effect writes into a visible element
 instead, and the notes say "adapted from the docs: alert replaced by text".

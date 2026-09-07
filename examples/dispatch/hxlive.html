@@ -1,0 +1,4 @@
+<div data-message="" hx-on:notify="data.message = 'Notified!'">
+    <button hx-on:click="trigger('notify')">Notify</button>
+    <span :text="data.message"></span>
+</div>

@@ -1,0 +1,7 @@
+<div x-data="{ open: false }">
+    <button @click="open = ! open">Toggle</button>
+
+    <template x-if="open">
+        <div>Contents...</div>
+    </template>
+</div>

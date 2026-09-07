@@ -1,0 +1,12 @@
+<div data-dark="false">
+    <div>
+        <button hx-on:click="data.dark = !data.dark">Toggle Dark Mode</button>
+    </div>
+
+    <div :class="{ dark: data.dark }">
+        Content
+    </div>
+</div>
+<style>
+    .dark { background: #18181b; color: #fff; padding: 4px 8px; }
+</style>

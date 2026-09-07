@@ -1,0 +1,8 @@
+<div x-data="{ colors: ['Red', 'Orange', 'Yellow'] }">
+    <ul>
+        <template x-for="color in colors">
+            <li x-text="color"></li>
+        </template>
+    </ul>
+    <button @click="colors.push('Green')">Add Green</button>
+</div>

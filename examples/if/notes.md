@@ -1,0 +1,1 @@
+`x-if` adds and removes the element from the DOM. hx-live never removes elements; `:hidden` keeps it in place and toggles visibility, exactly like `x-show`. When removal matters, for form submission or focus order, the honest hx-live answer is a server swap.

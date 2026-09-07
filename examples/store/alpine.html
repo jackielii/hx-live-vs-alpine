@@ -1,0 +1,22 @@
+<div x-data>
+    <button @click="$store.darkMode.toggle()">Toggle Dark Mode</button>
+</div>
+
+<div x-data :class="$store.darkMode.on && 'dark'">
+    Content
+</div>
+
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.store('darkMode', {
+            on: false,
+
+            toggle() {
+                this.on = ! this.on
+            }
+        })
+    })
+</script>
+<style>
+    .dark { background: #18181b; color: #fff; padding: 4px 8px; }
+</style>
