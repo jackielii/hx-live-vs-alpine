@@ -21,6 +21,18 @@ state bags (`data.*`, `aria.*`, `class.*`).
     npm install && npm run build            # once, so dist/ exists for go:embed
     go tool gsx generate && go test ./...   # routes and manifest
     npm run e2e                             # Playwright parity, both libraries
+    npm run e2e:static  # same suite against the export
+
+## Deploy
+
+The site is static. `npm run export` renders every page to `out/` and copies
+the bundle to `out/static/`; `SITE_BASE=/hx-live-vs-alpine/ npm run export`
+prefixes every URL for a GitHub Pages project site. `.github/workflows/pages.yml`
+does that on each push to `main` and publishes `out/` with `actions/deploy-pages`
+(repo setting: Pages → Source → GitHub Actions).
+
+`npm run e2e:static` runs the same Playwright suite against the exported
+directory served under the base path, the way Pages serves it.
 
 ## Layout
 
@@ -28,5 +40,6 @@ state bags (`data.*`, `aria.*`, `class.*`).
 - `pages/frame.gsx`: the single-library iframe document.
 - `pages/index.gsx`: the comparison page.
 - `web/frame-alpine.js`, `web/frame-hxlive.js`: one Vite entry per library.
+- `site/`: the page map that both serves and exports (candidate gsx pattern).
 
 Pinned: `htmx.org@4.0.0`, `alpinejs@3.17.1`.
