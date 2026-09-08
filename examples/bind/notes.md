@@ -1,1 +1,1 @@
-Any attribute binds with a `:` prefix in both. Alpine reads `placeholderText` from its component object; hx-live reads `data.placeholderText`, which maps to the closest `data-placeholder-text` attribute the same way `dataset` does.
+The docs example with `x-bind:placeholder` written as the `:placeholder` shorthand, which is what hx-live uses too. Alpine reads `placeholderText` from its component object; hx-live reads `data.placeholderText`, which maps to the closest `data-placeholder-text` attribute the same way `dataset` does.
