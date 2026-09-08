@@ -1,4 +1,4 @@
 <div data-title="Hello" data-after="">
-    <button hx-on:click="data.title = 'Hello World!'; nextFrame().then(() => data.after = this.innerText)" :text="data.title"></button>
+    <button hx-on:click="data.title = 'Hello World!'; await nextFrame(); data.after = this.innerText" :text="data.title"></button>
     <span :text="data.after"></span>
 </div>
