@@ -1,3 +1,5 @@
+https://jackielii.github.io/hx-live-vs-alpine/
+
 # hx-live vs Alpine
 
 Every Alpine.js core feature (18 directives, 9 magics, 3 globals) beside its
