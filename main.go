@@ -4,65 +4,92 @@ import (
 	"cmp"
 	"context"
 	"embed"
+	"flag"
+	"fmt"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
-	"github.com/gsxhq/gsx"
 	"github.com/gsxhq/vite"
 
 	"github.com/jackielii/hx-live-vs-alpine/examples"
 	"github.com/jackielii/hx-live-vs-alpine/pages"
+	"github.com/jackielii/hx-live-vs-alpine/site"
 )
 
 //go:embed all:dist
 var distFS embed.FS
 
-//go:embed all:public
-var publicFS embed.FS
+// staticURL is where the Vite bundle is served relative to the site base.
+// It must match Vite's `base` at build time (vite.config.ts reads SITE_BASE).
+func staticURL(base string) string {
+	return site.URL(site.NewContext(context.Background(), base), "/static/")
+}
 
-// newHandler builds the mux. Pure over its inputs so tests can drive it.
-func newHandler(v *vite.Vite, exs []examples.Example, feats []examples.FeatureRow) http.Handler {
+// buildMap lists every page of the site: the index and one frame per demo.
+func buildMap(exs []examples.Example, feats []examples.FeatureRow) site.Pages {
+	m := site.Pages{{Path: "/", Node: pages.Index(exs, feats)}}
+	for _, ex := range exs {
+		m = append(m, site.Page{Path: pages.FramePath(examples.Alpine, ex.Slug), Node: pages.Frame(examples.Alpine, ex)})
+		if ex.HasDemo() {
+			m = append(m, site.Page{Path: pages.FramePath(examples.HxLive, ex.Slug), Node: pages.Frame(examples.HxLive, ex)})
+		}
+	}
+	return m
+}
+
+// newHandler serves the site map plus the bundle and a health check, all
+// mounted under base.
+func newHandler(v *vite.Vite, m site.Pages, base string) (http.Handler, error) {
+	pagesHandler, err := m.Handler()
+	if err != nil {
+		return nil, err
+	}
+	base = site.URL(site.NewContext(context.Background(), base), "/") // normalised, ends with /
 	mux := http.NewServeMux()
-	mux.Handle("/public/", http.FileServerFS(publicFS))
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 	if !v.Dev() {
-		mux.Handle("/static/", v.StaticHandler())
+		mux.Handle(staticURL(base), v.StaticHandler())
 	}
-	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
-		render(w, r, pages.Index(exs, feats))
-	})
-	mux.HandleFunc("GET /frame/{lib}/{slug}", func(w http.ResponseWriter, r *http.Request) {
-		lib, ok := examples.ParseLib(r.PathValue("lib"))
-		if !ok {
-			http.NotFound(w, r)
-			return
-		}
-		ex, ok := examples.Find(exs, r.PathValue("slug"))
-		if !ok || (lib == examples.HxLive && !ex.HasDemo()) {
-			http.NotFound(w, r)
-			return
-		}
-		render(w, r, pages.Frame(lib, ex))
-	})
-	return mux
+	if base == "/" {
+		mux.Handle("/", pagesHandler)
+	} else {
+		mux.Handle(base, http.StripPrefix(strings.TrimSuffix(base, "/"), pagesHandler))
+	}
+	return site.Middleware(base, mux), nil
 }
 
-func render(w http.ResponseWriter, r *http.Request, n gsx.Node) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := n.Render(r.Context(), w); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+// export writes the site and the bundle to dir for static hosting under
+// base. bundle is the root of the built Vite output (the dist directory).
+func export(ctx context.Context, v *vite.Vite, m site.Pages, base, dir string, bundle fs.FS) error {
+	ctx = site.NewContext(vite.NewContext(ctx, v), base)
+	if err := m.Export(ctx, dir); err != nil {
+		return err
 	}
+	skip := func(p string) bool {
+		return p == ".vite" || strings.HasPrefix(p, ".vite/") || p == ".gitkeep"
+	}
+	if err := site.CopyFS(filepath.Join(dir, "static"), bundle, skip); err != nil {
+		return fmt.Errorf("copy bundle: %w", err)
+	}
+	return os.WriteFile(filepath.Join(dir, ".nojekyll"), nil, 0o644)
 }
 
 func main() {
+	base := flag.String("base", "/", "path the site is mounted under, e.g. /hx-live-vs-alpine/ (applies to serving and export)")
+	exportDir := flag.String("export", "", "write the site as static files to this directory and exit")
+	flag.Parse()
+
 	devURL := os.Getenv("VITE_DEV_URL") // "" in prod
-	v, err := vite.New(vite.Config{DevURL: devURL, DevBase: "/__vite/", Dist: distFS, DistDir: "dist"})
+	v, err := vite.New(vite.Config{DevURL: devURL, DevBase: "/__vite/", Dist: distFS, DistDir: "dist", StaticURL: staticURL(*base)})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -74,9 +101,29 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	m := buildMap(exs, feats)
 
+	if *exportDir != "" {
+		if v.Dev() {
+			log.Fatal("export needs a production bundle: unset VITE_DEV_URL and run `npm run build` first")
+		}
+		bundle, err := fs.Sub(distFS, "dist")
+		if err != nil {
+			log.Fatal(err)
+		}
+		if err := export(context.Background(), v, m, *base, *exportDir, bundle); err != nil {
+			log.Fatal(err)
+		}
+		log.Printf("exported %d pages to %s (base %s)", len(m), *exportDir, *base)
+		return
+	}
+
+	h, err := newHandler(v, m, *base)
+	if err != nil {
+		log.Fatal(err)
+	}
 	port := cmp.Or(os.Getenv("GO_PORT"), "7777")
-	srv := &http.Server{Addr: ":" + port, Handler: v.Middleware(newHandler(v, exs, feats))}
+	srv := &http.Server{Addr: ":" + port, Handler: v.Middleware(h)}
 
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {

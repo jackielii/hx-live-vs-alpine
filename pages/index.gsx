@@ -5,6 +5,7 @@ import (
 	"github.com/gsxhq/vite"
 
 	"github.com/jackielii/hx-live-vs-alpine/examples"
+	"github.com/jackielii/hx-live-vs-alpine/site"
 	"github.com/jackielii/hx-live-vs-alpine/ui"
 )
 
@@ -119,7 +120,7 @@ component statusBadge(status examples.Status) {
 
 // column is one side of a card: badge, live iframe, escaped source.
 component column(lib examples.Lib, ex examples.Example) {
-	{{ src := "/frame/" + string(lib) + "/" + ex.Slug }}
+	{{ src := site.URL(ctx, FramePath(lib, ex.Slug)) }}
 	<div class="flex min-w-0 flex-col gap-3">
 		<ui.Badge variant="secondary">{ lib.Label() }</ui.Badge>
 		<iframe

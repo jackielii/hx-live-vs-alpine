@@ -1,6 +1,7 @@
 /node_modules
 /dist/*
 !/dist/.gitkeep
+/out/
 /bin/
 *.x.go
 .env
