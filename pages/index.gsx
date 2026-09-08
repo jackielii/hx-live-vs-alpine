@@ -56,7 +56,6 @@ component Index(exs []examples.Example, feats []examples.FeatureRow) {
 								<ui.CardTitle class="flex items-center gap-2">
 									{ ex.Title }
 									<statusBadge status={ex.Status}/>
-									<a class="text-xs font-normal text-muted-foreground underline" href={"https://github.com/jackielii/hx-live-vs-alpine/tree/main/examples/" + ex.Slug}>[source]</a>
 								</ui.CardTitle>
 								{ if ex.HasDemo() {
 									<ui.CardDescription class="space-y-2">{ gsx.Raw(ex.NotesHTML) }</ui.CardDescription>

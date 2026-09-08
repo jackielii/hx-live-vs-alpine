@@ -152,9 +152,6 @@ func TestIndexListsEveryExampleWithBothSources(t *testing.T) {
 		if !strings.Contains(body, `id="`+ex.Slug+`"`) {
 			t.Errorf("%s: no anchor", ex.Slug)
 		}
-		if !strings.Contains(body, `href="https://github.com/jackielii/hx-live-vs-alpine/tree/main/examples/`+ex.Slug+`"`) {
-			t.Errorf("%s: no source link", ex.Slug)
-		}
 		libs := []examples.Lib{examples.Alpine}
 		if ex.HasDemo() {
 			libs = append(libs, examples.HxLive)
