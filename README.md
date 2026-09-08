@@ -43,3 +43,9 @@ directory served under the base path, the way Pages serves it.
 - `site/`: the page map that both serves and exports (candidate gsx pattern).
 
 Pinned: `htmx.org@4.0.0`, `alpinejs@3.17.1`.
+
+## If you like this, see also my other projects
+
+- [gsx](https://github.com/gsxhq/gsx): the JSX-like templating language for Go this site is built with
+- [gsxui](https://github.com/gsxhq/gsxui): shadcn-style components for gsx, used for the page chrome here
+- [structpages](https://github.com/jackielii/structpages): struct-based routing for Go web apps with templ and htmx

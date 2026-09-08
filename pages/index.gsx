@@ -33,7 +33,8 @@ component Index(exs []examples.Example, feats []examples.FeatureRow) {
 		<body class="bg-background text-foreground">
 			<div class="mx-auto grid max-w-7xl grid-cols-[220px_1fr] gap-10 px-6 py-10">
 				<nav class="sticky top-10 flex h-fit max-h-[calc(100vh-5rem)] flex-col gap-1 overflow-y-auto">
-					<h1 class="mb-3 text-lg font-semibold">hx-live vs Alpine</h1>
+					<h1 class="text-lg font-semibold">hx-live vs Alpine</h1>
+					<a class="mb-3 text-xs text-muted-foreground underline" href="https://github.com/jackielii/hx-live-vs-alpine">[source]</a>
 					<ui.Button variant="ghost" size="sm" href="#matrix" class="h-auto justify-start whitespace-normal text-left">Feature matrix</ui.Button>
 					{ for _, g := range examples.Groups {
 						<h2 class="mt-3 mb-1 text-xs font-semibold uppercase text-muted-foreground">{ g.Label() }</h2>
